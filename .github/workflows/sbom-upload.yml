@@ -1,0 +1,13 @@
+name: "SBOM upload"
+on:
+    push:
+        branches:
+            - main
+permissions:
+    contents: read
+    id-token: write
+jobs:
+  sbom-upload:
+    uses: qred/eed-org-workflows/.github/workflows/sbom-upload.yml@c099aa1b5aab60a2a7bb5c3a56a2bc740cae16eb
+    secrets: inherit
+            
