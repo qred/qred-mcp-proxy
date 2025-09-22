@@ -4,15 +4,14 @@ The `mcp_proxy` container provides an aggregated proxy server for the Model Cont
 
 ## Features
 
-- **Aggregated MCP Server**: Combines multiple backend MCP servers (PostgreSQL, Grafana, PostHog, SonarQube, etc.) into a single `/mcp` endpoint
+- **Aggregated MCP Server**: Combines multiple backend MCP servers into a single unified interface
 - **OAuth 2.1 Discovery Support**: RFC 9728 and RFC 8414 compliant discovery endpoints for automatic client configuration
 - **OAuth Bearer Token Authentication**: OAuth2 tokens validated against Google Workspace via userinfo endpoint
 - **Structured Activity Logging**: Dedicated authentication logs (`auth.log`) and application logs with user context
 - **Clean URL Structure**: Supports both `/mcp` and `/mcp/` endpoints via middleware
 - **Cached Token Validation**: 5-minute TTL cache to reduce authentication overhead
-- **Tool Namespacing**: Backend tools are namespaced (e.g., `postgres_list_databases`, `grafana_search_dashboards`)
+- **Tool Namespacing**: Backend tools are namespaced by their server name for isolation
 - **User Parameter Injection**: Automatically injects authenticated user context to backend services
-- **Sidecar Container Architecture**: SonarQube JAR deployment via init containers
 - **Cross-Account Authentication**: Support for AWS cross-account role assumption for backend services
 
 ## OAuth 2.1 Discovery Support
@@ -110,6 +109,10 @@ Backend MCP servers are configured in `servers.json`. Example:
   "fetch": {
     "command": "uvx",
     "args": ["mcp-server-fetch"]
+  },
+  "example-server": {
+    "command": "npx",
+    "args": ["-y", "your-mcp-server"]
   }
 }
 ```
@@ -123,22 +126,22 @@ The proxy supports filtering/excluding tools from being exposed to agents. This 
 Add an `excluded_tools` array to any server configuration:
 ```json
 {
-  "grafana": {
+  "your-server": {
     "command": "npx",
-    "args": ["-y", "mcp-remote", "http://127.0.0.1:8000/mcp"],
+    "args": ["-y", "your-mcp-server"],
     "transportType": "stdio",
     "excluded_tools": [
-      "update_dashboard",
-      "create_incident", 
+      "sensitive_operation",
+      "admin_function", 
       "*delete*",
-      "change_*"
+      "update_*"
     ]
   }
 }
 ```
 
 **Pattern Matching:**
-- **Exact Match**: `"dangerous_tool"` - excludes exactly "dangerous_tool"
+- **Exact Match**: `"sensitive_tool"` - excludes exactly "sensitive_tool"
 - **Prefix Wildcard**: `"update_*"` - excludes any tool starting with "update_"
 - **Suffix Wildcard**: `"*delete"` - excludes any tool ending with "delete"
 - **Substring Wildcard**: `"*admin*"` - excludes any tool containing "admin"
@@ -217,7 +220,7 @@ This script will:
 ### Production Deployment
 After deployment to ECR, the image can be used in ECS task definitions:
 ```
-913674957101.dkr.ecr.eu-west-1.amazonaws.com/mcp-proxy:sha-<git-commit-hash>
+<account-id>.dkr.ecr.<region>.amazonaws.com/mcp-proxy:sha-<git-commit-hash>
 ```
 
 #### OAuth Discovery Integration (Recommended)
@@ -258,12 +261,12 @@ General server operations and user activities:
 /app/
 ├── auth/           # Authentication logs (read/write by proxy)
 ├── keepalive/      # Backend health logs (read/write by proxy)  
-└── sonarqube/storage/ # SonarQube data and logs (read/write by proxy)
+└── backend/        # Backend-specific data and logs (configurable)
 
 /logs/              # Log monitor container read-only access
 ├── auth/           # Authentication log monitoring
 ├── keepalive/      # Keep-alive log monitoring
-└── sonarqube/storage      # SonarQube log monitoring
+└── backend/        # Backend log monitoring
 ```
 
 ## Testing OAuth 2.1 Discovery
@@ -337,5 +340,5 @@ The middleware automatically handles both `/mcp` and `/mcp/` paths - no manual r
 
 ## See Also
 - Root `README.md` for project overview and CDK deployment
-- `docker/mcp_postgres/mcp_postgres.md` for the PostgreSQL backend server
+- Backend-specific documentation for your configured MCP servers
 - MCP protocol documentation for client integration details
