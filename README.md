@@ -419,86 +419,17 @@ Ensure your AWS credentials have permissions for:
 
 ### 1. Configure Infrastructure
 
-The MCP Proxy uses AWS CDK (Cloud Development Kit) for infrastructure as code. The CDK configuration is located in `cdk/mcp-proxy/` and supports multiple environments.
+The MCP Proxy uses AWS CDK (Cloud Development Kit) for infrastructure as code deployment. For detailed setup instructions, see:
+- **Quick Start**: [cdk/mcp-proxy/README.md](cdk/mcp-proxy/README.md)
+- **Configuration Guide**: [cdk/mcp-proxy/CONFIGURATION.md](cdk/mcp-proxy/CONFIGURATION.md)
 
-#### Initial CDK Setup
+**Basic deployment workflow**:
+1. Navigate to `cdk/mcp-proxy/` and install dependencies
+2. Copy `cdk.example.jsonc` to `cdk.json` and configure your AWS settings
+3. Bootstrap CDK in your target account/region
+4. Deploy infrastructure with `npm run cdk deploy`
 
-1. **Navigate to the CDK directory**:
-   ```bash
-   cd cdk/mcp-proxy
-   ```
-
-2. **Install dependencies**:
-   ```bash
-   npm install
-   ```
-
-3. **Bootstrap CDK (first-time only)**:
-   ```bash
-   # Bootstrap for your AWS account and region
-   npm run cdk bootstrap
-   
-   # Or specify account and region explicitly
-   npx cdk bootstrap aws://ACCOUNT-NUMBER/REGION
-   ```
-
-4. **Configure environment settings**:
-   ```bash
-   # Copy the example configuration file
-   cp cdk.example.jsonc cdk.json
-   # Edit cdk.json with your AWS-specific values
-   ```
-
-#### Environment Configuration
-
-The system uses CDK context configuration through `cdk.json` for deployment settings:
-
-- **`cdk.json`**: Your deployment configuration (created from the example)
-- **`cdk.example.jsonc`**: Example configuration with comprehensive options and documentation
-
-The `cdk.example.jsonc` file contains extensive configuration examples including:
-
-**Key configuration sections**:
-- **VPC settings**: Existing VPC ID, subnet IDs, security groups
-- **Certificates**: ACM certificate ARN for HTTPS
-- **Secrets**: AWS Secrets Manager secret names and configurations
-- **Domain**: Route53 hosted zone and domain configuration
-- **Container images**: ECR repository URIs
-- **Environment variables**: Google Workspace domain, admin email, HTTPS domains
-- **Service configuration**: CPU, memory, scaling settings
-- **Database settings**: RDS instance configuration
-
-The example file includes detailed comments explaining each configuration option.
-
-See [CONFIGURATION.md](cdk/mcp-proxy/CONFIGURATION.md) for detailed configuration options.
-
-#### CDK Deployment Commands
-
-1. **Build the CDK project**:
-   ```bash
-   npm run build
-   ```
-
-2. **Preview changes (recommended)**:
-   ```bash
-   npm run cdk diff
-   ```
-
-3. **Deploy infrastructure**:
-   ```bash
-   npm run cdk deploy
-   ```
-
-4. **Deploy specific stacks** (if needed):
-   ```bash
-   # Deploy only the persistent stack (RDS, etc.)
-   npm run cdk deploy McpProxyPersistent
-   
-   # Deploy main application stack
-   npm run cdk deploy McpProxy
-   ```
-
-**Note**: Environment-specific configurations are handled through the `cdk.json` context values. You can customize deployment behavior by modifying the context settings in your `cdk.json` file.
+The CDK supports multiple environments (dev, staging, production) with environment-specific configuration.
 
 #### Deployment Architecture
 

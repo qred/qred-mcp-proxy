@@ -574,777 +574,121 @@ The configuration is automatically validated when you run CDK commands. Common v
 
 ## Feature Flags
 
-2. **Edit the configuration file:**
+The configuration system supports optional features that can be enabled via environment variables:
 
-The configuration system supports optional features that can be enabled via environment variables:   Fill in your AWS-specific values in `config.toml`
-
-
-
-### KMS Encryption (Optional)3. **Deploy to specific environment:**
-
-   ```bash
-
-By default, the system uses AWS managed keys for encryption. To use custom KMS keys:   CONFIG_ENV=development npm run cdk deploy
-
-   # or for default environment (default):
-
-```bash   npm run cdk deploy
-
-export ENABLE_KMS=true   ```
-
-cdk deploy
-
-```## Feature Flags
-
-
-
-**When KMS is enabled:**The configuration system supports optional features that can be enabled via environment variables:
-
-- Requires `[environment.kms]` section in config.toml
-
-- Creates a dedicated KMS stack for encryption### KMS Encryption (Optional)
-
-- Adds KMS decrypt permissions to the task execution role
+### KMS Encryption (Optional)
 
 By default, the system uses AWS managed keys for encryption. To use custom KMS keys:
 
-**When KMS is disabled (default):**
-
-- Uses AWS managed keys (e.g., `/aws/secretsmanager`)```bash
-
-- No additional KMS permissions neededexport ENABLE_KMS=true
-
-- Simpler setup and reduced costscdk deploy
-
+```bash
+export ENABLE_KMS=true
+cdk deploy
 ```
-
-## Setting the Environment
 
 **When KMS is enabled:**
-
-You can specify which environment configuration to use:- Requires `[environment.kms]` section in config.toml
-
+- Requires KMS configuration in your `cdk.json` context
 - Creates a dedicated KMS stack for encryption
+- Adds KMS decrypt permissions to the task execution role
 
-1. **Environment Variable** (recommended):- Adds KMS decrypt permissions to the task execution role
-
-   ```bash
-
-   export CONFIG_ENV=development**When KMS is disabled (default):**
-
-   cdk deploy- Uses AWS managed keys (e.g., `/aws/secretsmanager`)
-
-   ```- No additional KMS permissions needed
-
+**When KMS is disabled (default):**
+- Uses AWS managed keys (e.g., `/aws/secretsmanager`)
+- No additional KMS permissions needed
 - Simpler setup and reduced costs
-
-2. **Default**: If no `CONFIG_ENV` is set, it defaults to `default`
-
-## Setting the Environment
-
-## Configuration File Structure
-
-You can specify which environment configuration to use:
-
-The configuration is stored in `config.toml` using the TOML format. Here's what each section contains:
-
-1. **Environment Variable** (recommended):
-
-### [general]   ```bash
-
-Global settings that apply to all environments (team and cost center tags).   export CONFIG_ENV=development
-
-   cdk deploy
-
-```toml   ```
-
-[general]
-
-team = "platform"                      # Team tag for resources2. **Default**: If no `CONFIG_ENV` is set, it defaults to `default`
-
-cost_center = "platform"               # Cost center tag for resources
-
-```## Configuration File Structure
-
-
-
-### [environment] sections (e.g., [default], [development], [production])The configuration is stored in `config.toml` using the TOML format. Here's what each section contains:
-
-Environment-specific deployment settings. Each environment must be defined in its own section.
-
-### [general]
-
-```tomlGlobal settings that apply to all environments (team and cost center tags).
-
-[default]
-
-name = "default"                       # Environment name - used when no CONFIG_ENV is set```toml
-
-account = "123456789012"               # AWS account ID for this environment[general]
-
-region = "eu-west-1"                   # AWS region for this environmentteam = "platform"                      # Team tag for resources
-
-bucket_name = "mcp-proxy-123456789012-eu-west-1-assets" # S3 assets bucket (literal name)cost_center = "platform"               # Cost center tag for resources
-
-bucket_prefix = "mcp-proxy/"           # S3 bucket prefix for CDK assets```
-
-desired_count = 1                      # Number of ECS tasks to run
-
-### [environment] sections (e.g., [default], [development], [production])
-
-[development]Environment-specific deployment settings. Each environment must be defined in its own section.
-
-name = "development"                   # Environment name
-
-account = "123456789012"               # AWS account ID for this environment```toml
-
-region = "eu-west-1"                   # AWS region for this environment[default]
-
-bucket_name = "mcp-proxy-123456789012-eu-west-1-assets" # S3 assets bucket (literal name)name = "default"                       # Environment name - used when no CONFIG_ENV is set
-
-bucket_prefix = "mcp-proxy/"           # S3 bucket prefix for CDK assetsaccount = "123456789012"               # AWS account ID for this environment
-
-desired_count = 1                      # Number of ECS tasks to runregion = "eu-west-1"                   # AWS region for this environment
-
-bucket_name = "mcp-proxy-123456789012-eu-west-1-assets" # S3 assets bucket (literal name)
-
-[production]bucket_prefix = "mcp-proxy/"           # S3 bucket prefix for CDK assets
-
-name = "production"                    # Environment namedesired_count = 1                      # Number of ECS tasks to run
-
-account = "987654321098"               # AWS account ID for productiondb_user = "mcp_proxy"         # Database username
-
-region = "us-east-1"                   # AWS region for production
-
-bucket_name = "mcp-proxy-987654321098-us-east-1-assets" # S3 assets bucket (literal name)[production]
-
-bucket_prefix = "mcp-proxy/"           # S3 bucket prefix for CDK assetsname = "production"           # Environment name (dev/staging/production)
-
-desired_count = 3                      # Number of ECS tasks to rundesired_count = 2             # Number of ECS tasks to run
-
-```db_user = "mcp_proxy"         # Database username
-
-
-
-### [environment.vpc][development]
-
-Virtual Private Cloud configuration for each environment.name = "development"          # Environment name
-
-desired_count = 1            # Number of ECS tasks to run  
-
-```tomldb_user = "mcp_proxy_dev"    # Database username
-
-[default.vpc]```
-
-vpc_id = "vpc-123456789abcdef0"        # VPC ID where resources will be deployed
-
-### [environment.vpc]
-
-[production.vpc]Virtual Private Cloud configuration for each environment.
-
-vpc_id = "vpc-prod123456789abcdef0"    # VPC ID for production
-
-```toml
-
-[development.vpc][default.vpc]
-
-vpc_id = "vpc-dev123456789abcdef0"     # VPC ID for developmentvpc_id = "vpc-123456789abcdef0"  # VPC ID where resources will be deployed
-
-```
-
-[production.vpc]
-
-**How to find your VPC ID:**vpc_id = "vpc-prod123456789abcdef0"   # VPC ID for production
-
-- AWS Console: VPC → Your VPCs
-
-- AWS CLI: `aws ec2 describe-vpcs --query 'Vpcs[*].{VpcId:VpcId,Name:Tags[?Key==\`Name\`]|[0].Value}'`[development.vpc]
-
-vpc_id = "vpc-dev123456789abcdef0"   # VPC ID for development
-
-### [environment.dns]```
-
-Route53 DNS configuration for each environment.
-
-**How to find your VPC ID:**
-
-```toml- AWS Console: VPC → Your VPCs
-
-[default.dns]- AWS CLI: `aws ec2 describe-vpcs --query 'Vpcs[*].{VpcId:VpcId,Name:Tags[?Key==\`Name\`]|[0].Value}'`
-
-hosted_zone_id = "Z03108621DEXAMPLE"   # Route53 hosted zone ID
-
-zone_name = "example.com"              # Domain name### [environment.dns]
-
-Route53 DNS configuration for each environment.
-
-[production.dns]
-
-hosted_zone_id = "Z03108621PRODEXAMPLE" # Production hosted zone ID```toml
-
-zone_name = "prod.example.com"          # Production domain name[default.dns]
-
-hosted_zone_id = "Z03108621DEXAMPLE"  # Route53 hosted zone ID
-
-[development.dns]  zone_name = "example.com"             # Domain name
-
-hosted_zone_id = "Z03108621DEVEXAMPLE" # Development hosted zone ID
-
-zone_name = "dev.example.com"          # Development domain name[production.dns]
-
-```hosted_zone_id = "Z03108621PRODEXAMPLE"  # Production hosted zone ID
-
-zone_name = "prod.example.com"           # Production domain name
-
-**How to find your hosted zone:**
-
-- AWS Console: Route 53 → Hosted zones[development.dns]  
-
-- AWS CLI: `aws route53 list-hosted-zones --query 'HostedZones[*].{Id:Id,Name:Name}'`hosted_zone_id = "Z03108621DEVEXAMPLE" # Development hosted zone ID
-
-zone_name = "dev.example.com"          # Development domain name
-
-### [environment.certificates]```
-
-SSL/TLS certificate configuration for each environment.
-
-**How to find your hosted zone:**
-
-```toml- AWS Console: Route 53 → Hosted zones
-
-[production.certificates]- AWS CLI: `aws route53 list-hosted-zones --query 'HostedZones[*].{Id:Id,Name:Name}'`
-
-certificate_arn = "arn:aws:acm:eu-west-1:123456789012:certificate/example-cert-id"
-
-cloudfront_cert_arn = "arn:aws:acm:us-east-1:123456789012:certificate/example-cloudfront-cert-id"  # Optional### [environment.certificates]
-
-SSL/TLS certificate configuration for each environment.
-
-[development.certificates]
-
-certificate_arn = "arn:aws:acm:eu-west-1:123456789012:certificate/dev-cert-id"  ```toml
-
-cloudfront_cert_arn = "arn:aws:acm:us-east-1:123456789012:certificate/dev-cloudfront-cert-id"  # Optional[production.certificates]
-
-```certificate_arn = "arn:aws:acm:eu-west-1:123456789012:certificate/example-cert-id"
-
-cloudfront_cert_arn = "arn:aws:acm:us-east-1:123456789012:certificate/example-cloudfront-cert-id"  # Optional
-
-**Note:** CloudFront certificates must be in us-east-1 region.
-
-[development.certificates]
-
-**How to find certificates:**certificate_arn = "arn:aws:acm:eu-west-1:123456789012:certificate/dev-cert-id"  
-
-- AWS Console: Certificate Managercloudfront_cert_arn = "arn:aws:acm:us-east-1:123456789012:certificate/dev-cloudfront-cert-id"  # Optional
-
-- AWS CLI: `aws acm list-certificates --region eu-west-1````
-
-
-
-### [environment.ecr]**Note:** CloudFront certificates must be in us-east-1 region.
-
-Amazon Elastic Container Registry configuration for each environment.
-
-**How to find certificates:**
-
-```toml- AWS Console: Certificate Manager
-
-[production.ecr]- AWS CLI: `aws acm list-certificates --region eu-west-1`
-
-mcp_proxy_repository_arn = "arn:aws:ecr:eu-west-1:123456789012:repository/mcp-proxy"
-
-mcp_postgres_repository_arn = "arn:aws:ecr:eu-west-1:123456789012:repository/mcp-postgres"### [environment.ecr]
-
-mcp_oauth_repository_arn = "arn:aws:ecr:eu-west-1:123456789012:repository/mcp-oauth"Amazon Elastic Container Registry configuration for each environment.
-
-# Optional: Image tag to use if IMAGE_TAG environment variable is not set
-
-image_tag = "v1.2.3"```toml
-
-```[production.ecr]
-
-mcp_proxy_repository_arn = "arn:aws:ecr:eu-west-1:123456789012:repository/mcp-proxy"
-
-**Required fields:**mcp_postgres_repository_arn = "arn:aws:ecr:eu-west-1:123456789012:repository/mcp-postgres"
-
-- `mcp_proxy_repository_arn`: ECR repository ARN for the main MCP proxy containermcp_oauth_repository_arn = "arn:aws:ecr:eu-west-1:123456789012:repository/mcp-oauth"
-
-- `mcp_postgres_repository_arn`: ECR repository ARN for the PostgreSQL MCP server container# Optional: Image tag to use if IMAGE_TAG environment variable is not set
-
-- `mcp_oauth_repository_arn`: ECR repository ARN for the OAuth authentication containerimage_tag = "v1.2.3"
-
-```
-
-**Optional fields:**
-
-- `image_tag`: Docker image tag to use (see [Image Tag Priority](#image-tag-priority) section)**Required fields:**
-
-- `mcp_proxy_repository_arn`: ECR repository ARN for the main MCP proxy container
-
-**How to find ECR repository ARNs:**- `mcp_postgres_repository_arn`: ECR repository ARN for the PostgreSQL MCP server container
-
-- AWS Console: Elastic Container Registry → Repositories- `mcp_oauth_repository_arn`: ECR repository ARN for the OAuth authentication container
-
-- AWS CLI: `aws ecr describe-repositories --region eu-west-1`
-
-**Optional fields:**
-
-### [environment.kms] (Optional)- `image_tag`: Docker image tag to use (see [Image Tag Priority](#image-tag-priority) section)
-
-Key Management Service configuration for each environment. **Only required if `ENABLE_KMS=true`**.
-
-**How to find ECR repository ARNs:**
-
-```toml- AWS Console: Elastic Container Registry → Repositories
-
-# Only include this section if you want to use custom KMS keys- AWS CLI: `aws ecr describe-repositories --region eu-west-1`
-
-# Otherwise, AWS managed keys will be used automatically
-
-### [environment.kms] (Optional)
-
-[default.kms]Key Management Service configuration for each environment. **Only required if `ENABLE_KMS=true`**.
-
-key_arn = "arn:aws:kms:eu-west-1:123456789012:key/example-key-id"
-
-admin_roles = [```toml
-
-    "arn:aws:iam::123456789012:role/example-admin-role"# Only include this section if you want to use custom KMS keys
-
-]# Otherwise, AWS managed keys will be used automatically
-
-admin_users = []  # Optional
-
-[default.kms]
-
-[production.kms]key_arn = "arn:aws:kms:eu-west-1:123456789012:key/example-key-id"
-
-key_arn = "arn:aws:kms:eu-west-1:123456789012:key/prod-key-id"admin_roles = [
-
-admin_roles = [    "arn:aws:iam::123456789012:role/example-admin-role"
-
-    "arn:aws:iam::123456789012:role/example-admin-role"]
-
-]admin_users = []  # Optional
-
-admin_users = []  # Optional
-
-[production.kms]
-
-[development.kms]key_arn = "arn:aws:kms:eu-west-1:123456789012:key/prod-key-id"
-
-key_arn = "arn:aws:kms:eu-west-1:123456789012:key/dev-key-id"admin_roles = [
-
-admin_roles = [    "arn:aws:iam::123456789012:role/example-admin-role"
-
-    "arn:aws:iam::123456789012:role/example-admin-role"]
-
-]admin_users = []  # Optional
-
-admin_users = []  # Optional
-
-```[development.kms]
-
-key_arn = "arn:aws:kms:eu-west-1:123456789012:key/dev-key-id"
-
-**Usage:**admin_roles = [
-
-- Set `ENABLE_KMS=true` to enable custom KMS encryption    "arn:aws:iam::123456789012:role/example-admin-role"
-
-- If not set, AWS managed keys are used (simpler setup)]
-
-admin_users = []  # Optional
-
-**How to create/find KMS keys:**```
-
-- AWS Console: Key Management Service → Customer managed keys
-
-- AWS CLI: `aws kms list-keys --query 'Keys[*].KeyId'`**Usage:**
-
-- Set `ENABLE_KMS=true` to enable custom KMS encryption
-
-### [environment.secrets]- If not set, AWS managed keys are used (simpler setup)
-
-AWS Secrets Manager configuration for sensitive data in each environment.
-
-**How to create/find KMS keys:**
-
-```toml- AWS Console: Key Management Service → Customer managed keys
-
-[production.secrets]- AWS CLI: `aws kms list-keys --query 'Keys[*].KeyId'`
-
-google_wif_secret_arn = "arn:aws:secretsmanager:eu-west-1:123456789012:secret:mcp-proxy/googleWIF-example"
-
-google_oauth_secret_arn = "arn:aws:secretsmanager:eu-west-1:123456789012:secret:mcp-proxy/googleOAuth-example"### [environment.secrets]
-
-grafana_secret_arn = "arn:aws:secretsmanager:eu-west-1:123456789012:secret:mcp-proxy/grafana-example"AWS Secrets Manager configuration for sensitive data in each environment.
-
-openmetadata_secret_arn = "arn:aws:secretsmanager:eu-west-1:123456789012:secret:mcp-proxy/openmetadata-example"
-
-```toml
-
-[development.secrets][production.secrets]
-
-google_wif_secret_arn = "arn:aws:secretsmanager:eu-west-1:123456789012:secret:mcp-proxy/dev/googleWIF-example"google_wif_secret_arn = "arn:aws:secretsmanager:eu-west-1:123456789012:secret:mcp-proxy/googleWIF-example"
-
-google_oauth_secret_arn = "arn:aws:secretsmanager:eu-west-1:123456789012:secret:mcp-proxy/dev/googleOAuth-example"  google_oauth_secret_arn = "arn:aws:secretsmanager:eu-west-1:123456789012:secret:mcp-proxy/googleOAuth-example"
-
-grafana_secret_arn = "arn:aws:secretsmanager:eu-west-1:123456789012:secret:mcp-proxy/dev/grafana-example"grafana_secret_arn = "arn:aws:secretsmanager:eu-west-1:123456789012:secret:mcp-proxy/grafana-example"
-
-openmetadata_secret_arn = "arn:aws:secretsmanager:eu-west-1:123456789012:secret:mcp-proxy/dev/openmetadata-example"openmetadata_secret_arn = "arn:aws:secretsmanager:eu-west-1:123456789012:secret:mcp-proxy/openmetadata-example"
-
-```
-
-[development.secrets]
-
-**How to create secrets:**google_wif_secret_arn = "arn:aws:secretsmanager:eu-west-1:123456789012:secret:mcp-proxy/dev/googleWIF-example"
-
-```bashgoogle_oauth_secret_arn = "arn:aws:secretsmanager:eu-west-1:123456789012:secret:mcp-proxy/dev/googleOAuth-example"  
-
-# Example: Create Google OAuth secretgrafana_secret_arn = "arn:aws:secretsmanager:eu-west-1:123456789012:secret:mcp-proxy/dev/grafana-example"
-
-aws secretsmanager create-secret \openmetadata_secret_arn = "arn:aws:secretsmanager:eu-west-1:123456789012:secret:mcp-proxy/dev/openmetadata-example"
-
-    --name "mcp-proxy/googleOAuth" \```
-
-    --description "Google OAuth credentials for MCP Proxy" \
-
-    --secret-string '{"client_id":"your-client-id","client_secret":"your-client-secret"}'## Migration from Old Format
-
-```
-
-If you have an existing `config.toml` file in the old format, you need to restructure it:
 
 ## Environment Variables
 
-### Old Format (deprecated):
+The configuration system respects these environment variables:
 
-The configuration system also respects these environment variables:```toml
+- `CDK_DEFAULT_ACCOUNT`: Overrides account ID from cdk.json context
+- `CDK_DEFAULT_REGION`: Overrides region from cdk.json context
+- `IMAGE_TAG`: Docker image tag to deploy (highest priority)
+- `ENABLE_KMS`: Enable custom KMS encryption (true/false)
 
-[general]
-
-- `CDK_DEFAULT_ACCOUNT`: Overrides `[environment].account`# ... general settings
-
-- `CDK_DEFAULT_REGION`: Overrides `[environment].region`
-
-- `IMAGE_TAG`: Docker image tag to deploy (highest priority)[environment]
-
-name = "production"
-
-### Image Tag Priority# ... environment settings
-
-
-
-The system determines which Docker image tag to use with the following priority:[vpc]
-
-vpc_id = "vpc-123"
-
-1. **Environment Variable**: `IMAGE_TAG` (highest priority)
-
-2. **Configuration File**: `[environment].ecr.image_tag` [dns]
-
-3. **Git Context**: `sha-{gitRev}` if available from CDK context# ... dns settings
-
-4. **Default**: `"latest"` (lowest priority)```
-
-
-
-Example configuration:### New Format:
-
-```toml```toml
-
-[production.ecr][general]
-
-mcp_proxy_repository_arn = "arn:aws:ecr:region:account:repository/mcp-proxy"# ... same general settings
-
-mcp_postgres_repository_arn = "arn:aws:ecr:region:account:repository/mcp-postgres"
-
-mcp_oauth_repository_arn = "arn:aws:ecr:region:account:repository/mcp-oauth"[production]
-
-image_tag = "v1.2.3"  # Used if IMAGE_TAG env var is not setname = "production"
-
-```# ... environment settings
-
-
-
-## Migration from Old Format[production.vpc]
-
-vpc_id = "vpc-123"
-
-If you have an existing `config.toml` file in the old format, you need to restructure it:
-
-[production.dns]
-
-### Old Format (deprecated):# ... dns settings
-
-```toml```
-
-[general]
-
-# ... general settings### Migration Steps:
-
-1. Keep the `[general]` section unchanged
-
-[environment]2. Rename `[environment]` to `[default]` (or your desired environment name)
-
-name = "production"3. Move all other sections under your environment (e.g., `[vpc]` → `[default.vpc]`)
-
-# ... environment settings4. Optionally, add additional environments like `[development]`, `[staging]`, `[production]`, etc.
-
-
-
-[vpc]## Environment Usage Examples
-
-vpc_id = "vpc-123"
-
-```bash
-
-[dns]# Deploy to default environment (default)
-
-# ... dns settingsnpm run cdk deploy
-
-```
-
-# Deploy to development
-
-### New Format:CONFIG_ENV=development npm run cdk deploy
-
-```toml
-
-[general]# Deploy to production
-
-# ... same general settingsCONFIG_ENV=production npm run cdk deploy
-
-
-
-[production]# Deploy to staging
-
-name = "production"CONFIG_ENV=staging npm run cdk deploy
-
-# ... environment settings```
-
-openmetadata_secret_arn = "arn:aws:secretsmanager:eu-west-1:123456789012:secret:mcp-proxy/openmetadata-example"  # Optional
-
-[production.vpc]```
-
-vpc_id = "vpc-123"
-
-**How to create secrets:**
-
-[production.dns]```bash
-
-# ... dns settings# Example: Create Google OAuth secret
-
-```aws secretsmanager create-secret \
-
-    --name "mcp-proxy/googleOAuth" \
-
-### Migration Steps:    --description "Google OAuth credentials for MCP Proxy" \
-
-1. Keep the `[general]` section unchanged    --secret-string '{"client_id":"your-client-id","client_secret":"your-client-secret"}'
-
-2. Rename `[environment]` to `[default]` (or your desired environment name)```
-
-3. Move all other sections under your environment (e.g., `[vpc]` → `[default.vpc]`)
-
-4. Optionally, add additional environments like `[development]`, `[staging]`, `[production]`, etc.## Environment Variables
-
-
-
-## ValidationThe configuration system also respects these environment variables:
-
-
-
-The configuration is automatically validated when you run CDK commands. Common validation errors:- `CDK_DEFAULT_ACCOUNT`: Overrides `[environment].account`
-
-- `CDK_DEFAULT_REGION`: Overrides `[environment].region`
-
-- **Invalid AWS account ID**: Must be exactly 12 digits- `IMAGE_TAG`: Docker image tag to deploy (highest priority)
-
-- **Invalid VPC ID**: Must start with `vpc-` followed by hexadecimal characters
-
-- **Invalid ARNs**: Must follow proper AWS ARN format for each service### Image Tag Priority
-
-- **Missing required fields**: All required sections and fields must be present
+### Image Tag Priority
 
 The system determines which Docker image tag to use with the following priority:
 
-## Security Best Practices
-
 1. **Environment Variable**: `IMAGE_TAG` (highest priority)
+2. **Configuration File**: `imageTag` context value in cdk.json
+3. **Git Context**: `sha-{gitRev}` if available from CDK context
+4. **Default**: `"latest"` (lowest priority)
 
-1. **Never commit `config.toml`** to version control (it's already in `.gitignore`)2. **Configuration File**: `[environment].ecr.image_tag` 
+Example:
+```bash
+# Deploy with specific image tag
+IMAGE_TAG=v1.2.3 npm run cdk deploy
 
-2. **Use least-privilege IAM roles** for KMS admin access3. **Git Context**: `sha-{gitRev}` if available from CDK context
-
-3. **Rotate secrets regularly** in AWS Secrets Manager4. **Default**: `"latest"` (lowest priority)
-
-4. **Use different configurations** for different environments (dev, staging, production)
-
-Example configuration:
-
-## Troubleshooting```toml
-
-[production.ecr]
-
-### "Configuration file not found"mcp_proxy_repository_arn = "arn:aws:ecr:region:account:repository/mcp-proxy"
-
-```mcp_postgres_repository_arn = "arn:aws:ecr:region:account:repository/mcp-postgres"
-
-cp config.example.toml config.tomlmcp_oauth_repository_arn = "arn:aws:ecr:region:account:repository/mcp-oauth"
-
-```image_tag = "v1.2.3"  # Used if IMAGE_TAG env var is not set
-
+# Or set in cdk.json context
+{
+  "context": {
+    "imageTag": "v1.2.3"
+  }
+}
 ```
 
-### "Configuration validation failed"
+## Validation
 
-Check the error message for specific validation failures and fix the corresponding fields in `config.toml`.## Validation
+The configuration is automatically validated when you run CDK commands. Common validation errors:
 
-
-
-### "Need to perform AWS calls but no credentials configured"The configuration is automatically validated when you run CDK commands. Common validation errors:
-
-Ensure your AWS credentials are configured:
-
-```bash- **Invalid AWS account ID**: Must be exactly 12 digits
-
-aws configure- **Invalid VPC ID**: Must start with `vpc-` followed by hexadecimal characters
-
-# or- **Invalid ARNs**: Must follow proper AWS ARN format for each service
-
-aws sso login --profile your-profile- **Missing required fields**: All required sections and fields must be present
-
-```
+- **Invalid AWS account ID**: Must be exactly 12 digits
+- **Invalid VPC ID**: Must start with `vpc-` followed by hexadecimal characters
+- **Invalid ARNs**: Must follow proper AWS ARN format for each service
+- **Missing required fields**: All required context values must be present
 
 ## Security Best Practices
 
-### CDK deployment fails
-
-1. Verify all ARNs exist in your AWS account1. **Never commit `config.toml`** to version control (it's already in `.gitignore`)
-
-2. Check IAM permissions for CDK deployment2. **Use least-privilege IAM roles** for KMS admin access
-
-3. Ensure the VPC and subnets are properly configured3. **Rotate secrets regularly** in AWS Secrets Manager
-
+1. **Never commit `cdk.json`** to version control (use `cdk.example.jsonc` as template)
+2. **Use least-privilege IAM roles** for KMS admin access
+3. **Rotate secrets regularly** in AWS Secrets Manager
 4. **Use different configurations** for different environments (dev, staging, production)
-
-## Environment Usage Examples
 
 ## Troubleshooting
 
+### "Configuration file not found"
 ```bash
-
-# Deploy to default environment (default)### "Configuration file not found"
-
-cp config.example.toml config.toml
-
-npm run cdk deploy```
-
-# Deploy to development```
-
-CONFIG_ENV=development npm run cdk deploy
+cp cdk.example.jsonc cdk.json
+# Edit cdk.json with your values
+```
 
 ### "Configuration validation failed"
-
-# Deploy to productionCheck the error message for specific validation failures and fix the corresponding fields in `config.toml`.
-
-CONFIG_ENV=production npm run cdk deploy
+Check the error message for specific validation failures and fix the corresponding fields in `cdk.json`.
 
 ### "Need to perform AWS calls but no credentials configured"
-
-# Deploy to stagingEnsure your AWS credentials are configured:
-
-CONFIG_ENV=staging npm run cdk deploy```bash
-
-```aws configure
-
+Ensure your AWS credentials are configured:
+```bash
+aws configure
 # or
-
-## Example Deployment Workflowaws sso login --profile your-profile
-
+aws sso login --profile your-profile
 ```
 
-```bash
-
-# 1. Set up configuration### CDK deployment fails
-
-cp config.example.toml config.toml1. Verify all ARNs exist in your AWS account
-
-# Edit config.toml with your values2. Check IAM permissions for CDK deployment
-
+### CDK deployment fails
+1. Verify all ARNs exist in your AWS account
+2. Check IAM permissions for CDK deployment
 3. Ensure the VPC and subnets are properly configured
 
-# 2. Install dependencies
+## Example Deployment Workflow
 
-npm install## Example Deployment Workflow
-
-
-
-# 3. Build the project```bash
-
-npm run build# 1. Set up configuration
-
-cp config.example.toml config.toml
-
-# 4. Bootstrap CDK (first time only)# Edit config.toml with your values
-
-npm run cdk bootstrap
+```bash
+# 1. Set up configuration
+cp cdk.example.jsonc cdk.json
+# Edit cdk.json with your values
 
 # 2. Install dependencies
-
-# 5. Preview changesnpm install
-
-npm run cdk diff
+npm install
 
 # 3. Build the project
+npm run build
 
-# 6. Deploynpm run build
-
-npm run cdk deploy
-
-```# 4. Bootstrap CDK (first time only)
-
+# 4. Bootstrap CDK (first time only)
 npm run cdk bootstrap
 
-## Multiple Environments
-
 # 5. Preview changes
+npm run cdk diff
 
-For multiple environments, you can use the CONFIG_ENV environment variable to switch between configurations within the same `config.toml` file:npm run cdk diff
-
-
-
-```bash# 6. Deploy
-
-# Development deploymentnpm run cdk deploy
-
-CONFIG_ENV=development npm run cdk deploy```
-
-
-
-# Production deployment  ## Multiple Environments
-
-CONFIG_ENV=production npm run cdk deploy
-
-For multiple environments, create separate configuration files:
-
-# Or set it persistently in your shell
-
-export CONFIG_ENV=development```bash
-
-npm run cdk deploy# Development
-
-```cp config.example.toml config.dev.toml
-
-# Edit config.dev.toml
-
-All environment configurations are defined in the same `config.toml` file using the environment-specific section format outlined above.
-# Production  
-cp config.example.toml config.prod.toml
-# Edit config.prod.toml
-
-# Deploy with specific config
-ln -sf config.dev.toml config.toml && npm run cdk deploy
+# 6. Deploy
+npm run cdk deploy
 ```
+
+## Configuration Examples
+
+For detailed configuration examples and all available options, see the comprehensive examples in `cdk.example.jsonc`.

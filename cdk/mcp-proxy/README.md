@@ -217,104 +217,25 @@ After deployment, the stack outputs load balancer DNS names that you can use:
 - Internal LB: `mcp-proxy-internal-alb-123456789.eu-west-1.elb.amazonaws.com`
 - External LB: `mcp-proxy-external-alb-987654321.eu-west-1.elb.amazonaws.com`
 
-### Minimal Configuration
-For a basic setup (VS Code, internal agents only):
+## Configuration Examples
 
-```json
-{
-  "dns": {
-    "hostedZoneId": "Z03108621XXXXXXXXXX",
-    "zoneName": "example.com"
-  },
-  "secrets": {
-    "googleWifSecretArn": "arn:aws:secretsmanager:...",
-    "googleOauthSecretArn": "arn:aws:secretsmanager:..."
-  },
-  "saEmail": "your-sa@your-gcp-project.iam.gserviceaccount.com",
-  "enableExternalLoadBalancer": false,
-  "internalNetworks": ["10.0.0.0/16", "192.168.1.0/24"]
-}
-```
+The stack supports flexible configuration for different deployment scenarios. For detailed configuration options and examples, see [CONFIGURATION.md](./CONFIGURATION.md).
 
-### Configuration without DNS (External DNS Management)
-To deploy without automatic DNS record creation:
+**Common deployment patterns**:
+- **Basic setup**: Internal access only with minimal required secrets
+- **External AI access**: Enable external load balancer for AI providers like Claude
+- **Shared infrastructure**: Cost-efficient multi-environment deployments
+- **External DNS management**: Deploy without automatic Route53 record creation
 
-```json
-{
-  // Omit the "dns" section entirely
-  "secrets": {
-    "googleWifSecretArn": "arn:aws:secretsmanager:...",
-    "googleOauthSecretArn": "arn:aws:secretsmanager:..."
-  },
-  "saEmail": "your-sa@your-gcp-project.iam.gserviceaccount.com",
-  "enableExternalLoadBalancer": false,
-  "internalNetworks": ["10.0.0.0/16", "192.168.1.0/24"]
-}
-```
-> **Note**: When DNS is omitted, you'll need to create your own DNS records pointing to the load balancer endpoints.
+## MCP Server Configuration
 
-### Configuration for AI Providers
-To enable access for external AI providers like Claude:
+The MCP Proxy supports multiple optional MCP servers:
+- **Required**: Google OAuth & Workload Identity Federation
+- **Optional**: Grafana, PostHog, OpenMetadata (enabled by providing secret ARNs)
 
-```json
-"secrets": {
-  "googleWifSecretArn": "arn:aws:secretsmanager:...",
-  "googleOauthSecretArn": "arn:aws:secretsmanager:..."
-},
-"saEmail": "your-sa@your-gcp-project.iam.gserviceaccount.com",
-"enableExternalLoadBalancer": true,
-"internalNetworks": ["10.0.0.0/16", "192.168.1.0/24"]
-```
-
-### Shared Infrastructure Configuration
-For cost-efficient multi-environment deployments:
-
-```json
-// Parent environment (creates shared infrastructure)
-"shared-parent": {
-  "serviceName": "mcp-proxy-shared",
-  "loadBalancerPorts": [443, 8443, 9443],  // Configure all ports for child services
-  "servicePort": 443,                      // Parent uses port 443
-  "internalNetworks": ["10.0.0.0/16"]
-},
-
-// Child environment (uses existing infrastructure) 
-"dev1": {
-  "serviceName": "mcp-proxy-dev1",
-  "servicePort": 8443,                     // Child uses port 8443
-  "existingResources": {
-    "clusterName": "mcp-proxy-shared-cluster",
-    "internalLoadBalancerArn": "arn:aws:elasticloadbalancing:..."
-  }
-}
-```
-
-### Full Configuration
-To enable all optional MCP servers with external access:
-
-```json
-"secrets": {
-  "googleWifSecretArn": "arn:aws:secretsmanager:...",
-  "googleOauthSecretArn": "arn:aws:secretsmanager:...",
-  "grafanaSecretArn": "arn:aws:secretsmanager:...",
-  "posthogSecretArn": "arn:aws:secretsmanager:...",
-  "openmetadataSecretArn": "arn:aws:secretsmanager:..."
-},
-"saEmail": "your-sa@your-gcp-project.iam.gserviceaccount.com",
-"grafanaUrl": "https://your-grafana.url",
-"enableExternalLoadBalancer": true
-```
-
-> **Security Note**: The external load balancer is disabled by default to minimize security exposure. Only enable it if you need external AI provider access.
-
-## MCP Server Configuration Files
-
-The system uses two configuration approaches:
-
-- **`config/mcp-servers.json`**: Minimal configuration with only the fetch server for basic functionality
-- **`config/mcp-servers.example.jsonc`**: Complete example showing all available MCP servers with detailed comments
-
-To add optional MCP servers, copy the relevant sections from the example file to your `mcp-servers.json` and configure according to your setup.
+Configuration files:
+- **`config/mcp-servers.json`**: Minimal configuration for basic functionality
+- **`config/mcp-servers.example.jsonc`**: Complete example with all available servers
 
 ## Prerequisites
 
@@ -337,20 +258,7 @@ Your AWS credentials need permissions for:
 
 ## Security Configuration
 
-### Secrets Management
-Store sensitive configuration in AWS Secrets Manager:
-
-```bash
-# Google OAuth credentials
-aws secretsmanager create-secret \
-    --name "mcp-proxy/googleOAuth" \
-    --secret-string '{"client_id":"your-id","client_secret":"your-secret"}'
-
-# Google Workload Identity Federation
-aws secretsmanager create-secret \
-    --name "mcp-proxy/googleWIF" \
-    --secret-string '{"type":"service_account",...}'
-```
+For detailed secrets setup instructions, see [CONFIGURATION.md](./CONFIGURATION.md).
 
 ### Network Security
 - ECS tasks run in private subnets
