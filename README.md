@@ -111,9 +111,29 @@ Set up Workload Identity Federation for secure authentication from AWS:
    gcloud projects add-iam-policy-binding YOUR_PROJECT_ID \
      --member="serviceAccount:mcp-proxy-sa@YOUR_PROJECT_ID.iam.gserviceaccount.com" \
      --role="roles/iam.serviceAccountTokenCreator"
+   
+   # Enable Admin SDK API for domain-wide delegation
+   gcloud services enable admin.googleapis.com --project="YOUR_PROJECT_ID"
    ```
 
-3. **Create Workload Identity Pool**:
+3. **Configure domain-wide delegation** (Required for Google Workspace user authentication):
+   
+   a. **Get the service account's unique ID**:
+   ```bash
+   gcloud iam service-accounts describe mcp-proxy-sa@YOUR_PROJECT_ID.iam.gserviceaccount.com \
+     --format="value(uniqueId)"
+   ```
+   
+   b. **Set up domain-wide delegation in Google Workspace Admin Console**:
+   - Go to [Google Workspace Admin Console](https://admin.google.com/)
+   - Navigate to Security > Access and data control > API controls
+   - Click "Manage Domain-wide Delegation"
+   - Click "Add new" and enter:
+     - **Client ID**: The unique ID from step 3a
+     - **OAuth scopes**: `https://www.googleapis.com/auth/admin.directory.user.readonly,https://www.googleapis.com/auth/admin.directory.group.member.readonly`
+   - Click "Authorize"
+
+4. **Create Workload Identity Pool**:
    ```bash
    # TODO: Replace ${PROJECT_ID} with your GCP project ID
    gcloud iam workload-identity-pools create mcp-proxy-pool \
@@ -123,7 +143,7 @@ Set up Workload Identity Federation for secure authentication from AWS:
      --description="Workload Identity Pool for MCP Proxy running on AWS ECS"
    ```
 
-4. **Get the full Workload Identity Pool ID**:
+5. **Get the full Workload Identity Pool ID**:
    ```bash
    # TODO: Replace ${PROJECT_ID} with your GCP project ID
    gcloud iam workload-identity-pools describe mcp-proxy-pool \
@@ -134,7 +154,7 @@ Set up Workload Identity Federation for secure authentication from AWS:
    
    This should return a value like: `projects/123456789/locations/global/workloadIdentityPools/mcp-proxy-pool`
 
-5. **Create Workload Identity Provider for AWS with security constraints**:
+6. **Create Workload Identity Provider for AWS with security constraints**:
    
    🛑 **SECURITY NOTE**: Always add attribute conditions to restrict access to the Workload Identity Pool. The condition below restricts access to only your specific AWS account and ECS task role.
    
@@ -163,10 +183,10 @@ Set up Workload Identity Federation for secure authentication from AWS:
      --attribute-condition="attribute.aws_role.startsWith('arn:aws:sts::123456789012:assumed-role/mcp-proxy-task-role/')"
    ```
 
-6. **Bind service account to Workload Identity with specific role constraint**:
+7. **Bind service account to Workload Identity with specific role constraint**:
    ```bash
    # TODO: Replace ${PROJECT_ID}, ${WORKLOAD_IDENTITY_POOL_ID}, ${AWS_ACCOUNT_ID}, and ${ECS_TASK_ROLE_NAME}
-   # ${WORKLOAD_IDENTITY_POOL_ID} is the full pool ID from step 4
+   # ${WORKLOAD_IDENTITY_POOL_ID} is the full pool ID from step 5
    gcloud iam service-accounts add-iam-policy-binding \
      "mcp-proxy-sa@${PROJECT_ID}.iam.gserviceaccount.com" \
      --project="${PROJECT_ID}" \
@@ -174,7 +194,7 @@ Set up Workload Identity Federation for secure authentication from AWS:
      --member="principalSet://iam.googleapis.com/${WORKLOAD_IDENTITY_POOL_ID}/attribute.aws_role/arn:aws:sts::${AWS_ACCOUNT_ID}:assumed-role/${ECS_TASK_ROLE_NAME}"
    ```
 
-7. **Extract the Workload Identity Provider resource name**:
+8. **Extract the Workload Identity Provider resource name**:
    ```bash
    # TODO: Replace ${PROJECT_ID} with your GCP project ID
    gcloud iam workload-identity-pools providers describe mcp-proxy-aws \
@@ -186,7 +206,7 @@ Set up Workload Identity Federation for secure authentication from AWS:
    
    This will return the full provider name needed for the configuration file.
 
-8. **Generate the Workload Identity configuration**:
+9. **Generate the Workload Identity configuration**:
    ```bash
    # TODO: Replace ${PROJECT_ID} with your GCP project ID
    gcloud iam workload-identity-pools providers describe mcp-proxy-aws \
@@ -202,27 +222,29 @@ Set up Workload Identity Federation for secure authentication from AWS:
 
 1. **Always use attribute conditions**: The attribute condition in step 5 ensures that only your specific AWS ECS task role can authenticate. Never create a provider without proper conditions.
 
-2. **Principle of least privilege**: Grant only the minimum required permissions to the service account:
+2. **Domain-wide delegation setup**: The MCP Proxy requires domain-wide delegation to access Google Workspace APIs for user authentication and group membership validation.
+
+3. **Required Google Workspace API scopes**: Configure the service account with these specific scopes:
+   - `https://www.googleapis.com/auth/admin.directory.user.readonly` - Read user information
+   - `https://www.googleapis.com/auth/admin.directory.group.member.readonly` - Read group memberships
+   
+   **Setting up domain-wide delegation**:
    ```bash
-   # Example: Grant only specific permissions needed for your use case
-   gcloud projects add-iam-policy-binding ${PROJECT_ID} \
-     --member="serviceAccount:mcp-proxy-sa@${PROJECT_ID}.iam.gserviceaccount.com" \
-     --role="roles/secretmanager.secretAccessor"
+   # Enable the Admin SDK API
+   gcloud services enable admin.googleapis.com --project="${PROJECT_ID}"
+   
+   # Note the service account's unique ID for Google Workspace Admin Console
+   gcloud iam service-accounts describe mcp-proxy-sa@${PROJECT_ID}.iam.gserviceaccount.com \
+     --format="value(uniqueId)"
    ```
+   
+   Then in Google Workspace Admin Console:
+   - Go to Security > Access and data control > API controls
+   - Click "Manage Domain-wide Delegation"
+   - Add the service account's unique ID with scopes:
+     `https://www.googleapis.com/auth/admin.directory.user.readonly,https://www.googleapis.com/auth/admin.directory.group.member.readonly`
 
-3. **Monitor and audit**: Enable audit logging for the service account and Workload Identity Pool:
-   ```bash
-   # Enable audit logs for IAM
-   gcloud logging sinks create wif-audit-sink \
-     bigquery.googleapis.com/projects/${PROJECT_ID}/datasets/security_audit \
-     --log-filter='protoPayload.serviceName="iam.googleapis.com"'
-   ```
-
-4. **Regular rotation**: Consider implementing regular rotation of the Workload Identity Provider if your AWS role ARNs change.
-
-For more detailed security guidance, see:
-- [Workload Identity Federation Best Practices](https://cloud.google.com/iam/docs/workload-identity-federation-with-other-clouds#security-considerations)
-- [AWS to Google Cloud Authentication](https://cloud.google.com/iam/docs/workload-identity-federation-with-other-clouds)
+4. **Principle of least privilege**: Grant only the minimum required permissions to the service account. Avoid broad administrative roles when domain-wide delegation is configured.
 
 ### 2. AWS Infrastructure Prerequisites
 
