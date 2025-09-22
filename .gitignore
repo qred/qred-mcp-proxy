@@ -1,2 +1,23 @@
-*.log
+# typescript excludes
+*.js
+!jest.config.js
+*.d.ts
+node_modules
+dist
+
+# python uv development
+.venv
+*.egg-info
+__pycache__
+.pytest_cache
+
+# test reports
+ctrf/
+
+# CDK asset staging directory
+.cdk.staging
+cdk.context.json
+cdk.out
+
+# macOs
 .DS_Store

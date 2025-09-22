@@ -1,0 +1,39 @@
+{
+  "mcpServers": {
+    "posthog": {
+      "disabled": false,
+      "timeout": 120,
+      "command": "mcp-remote",
+      "args": [
+        "http://posthog-mcp-service.posthog.svc.cluster.local:8000"
+      ],
+      "transportType": "stdio",
+      "required_groups": [
+        "usg-shadow-posthog",
+        "analytics-team"
+      ]
+    },
+    "fetch": {
+      "disabled": false,
+      "timeout": 60,
+      "command": "uvx",
+      "args": [
+        "mcp-server-fetch"
+      ],
+      "transportType": "stdio"
+    },
+    "grafana": {
+      "disabled": false,
+      "timeout": 60,
+      "command": "mcp-remote",
+      "args": [
+        "http://grafana-mcp-service.grafana.svc.cluster.local:8000"
+      ],
+      "transportType": "stdio",
+      "required_groups": [
+        "platform-team",
+        "sre-team"
+      ]
+    }
+  }
+}

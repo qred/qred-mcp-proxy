@@ -1,0 +1,67 @@
+name: "Run unit tests"
+
+on:
+  pull_request:
+    branches:
+        - main
+
+jobs:
+  run-unit-tests:
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      checks: write
+      contents: write
+      pull-requests: write
+      id-token: write
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c
+        with:
+          python-version: '3.13'
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@b75a909f75acd358c2196fb9a5f1299a9a8868a4
+        with:
+          version: "0.8.19"
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: |
+          uv sync --group test
+      
+      - name: Run OAuth server tests
+        run: |
+          uv run python tests/run_tests.py --oauth --ctrf
+      
+      - name: Run MCP proxy application tests  
+        run: |
+          uv run python tests/run_tests.py --proxy --ctrf
+      
+      - name: Publish Test Report
+        if: always()
+        uses: ctrf-io/github-test-reporter@646f98cfc16c6f7a0e1f6100cabe2deb95dd2eef
+        with:
+          report-path: './ctrf/*.json'
+          summary-report: true
+          github-report: true
+          failed-report: true
+          fail-rate-report: true
+          flaky-report: true
+          flaky-rate-report: true
+          failed-folded-report: true
+          insights-report: true
+          pull-request-report: true
+          pull-request: true
+          collapse-large-reports: true
+          overwrite-comment: true
+          suite-folded-report: true
+          use-suite-name: true
+          group-by: 'suite'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
