@@ -427,6 +427,29 @@ The OAuth sidecar detects Claude Code clients and provides proxy endpoints to ha
 - **Multi-Client Support**: Optimized for Claude Code, VS Code, Claude Web/Desktop
 - **AWS Deployment**: Production CDK infrastructure with load balancing and auto-scaling
 
+## Known Limitations
+
+⚠️ **Google OAuth Refresh Token Limits**:
+
+Google OAuth 2.0 has a hard limit of **100 active refresh tokens per OAuth client**. This means:
+
+- **Maximum concurrent users**: 100 authenticated users per Google OAuth client
+- **Token behavior**: When the 101st user authenticates, the oldest refresh token is automatically revoked
+- **Impact**: Users with revoked tokens will need to re-authenticate
+
+**Solutions for larger deployments**:
+
+1. **Multiple OAuth clients**: Create additional Google OAuth client IDs and distribute users across them
+2. **Client rotation**: Implement logic to rotate between multiple OAuth clients based on user count
+3. **Session management**: Consider shorter session durations to reduce long-term token usage
+
+**Monitoring recommendations**:
+- Track active refresh token count via Google Cloud Console
+- Monitor authentication failures that might indicate token revocation
+- Set up alerts when approaching the 100-user limit
+
+For organizations with more than 100 concurrent users, you'll need to implement a multi-client OAuth strategy or consider alternative authentication approaches.
+
 ## Authentication & Security Features
 
 The OAuth 2.1 sidecar implements enterprise-grade authentication with:
