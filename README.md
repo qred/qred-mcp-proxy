@@ -115,34 +115,114 @@ Set up Workload Identity Federation for secure authentication from AWS:
 
 3. **Create Workload Identity Pool**:
    ```bash
+   # TODO: Replace ${PROJECT_ID} with your GCP project ID
    gcloud iam workload-identity-pools create mcp-proxy-pool \
+     --project="${PROJECT_ID}" \
      --location="global" \
-     --description="Workload Identity Pool for MCP Proxy"
+     --display-name="MCP Proxy AWS Pool" \
+     --description="Workload Identity Pool for MCP Proxy running on AWS ECS"
    ```
 
-4. **Create Workload Identity Provider for AWS**:
+4. **Get the full Workload Identity Pool ID**:
    ```bash
+   # TODO: Replace ${PROJECT_ID} with your GCP project ID
+   gcloud iam workload-identity-pools describe mcp-proxy-pool \
+     --project="${PROJECT_ID}" \
+     --location="global" \
+     --format="value(name)"
+   ```
+   
+   This should return a value like: `projects/123456789/locations/global/workloadIdentityPools/mcp-proxy-pool`
+
+5. **Create Workload Identity Provider for AWS with security constraints**:
+   
+   🛑 **SECURITY NOTE**: Always add attribute conditions to restrict access to the Workload Identity Pool. The condition below restricts access to only your specific AWS account and ECS task role.
+   
+   ```bash
+   # TODO: Replace ${PROJECT_ID}, ${AWS_ACCOUNT_ID}, and ${ECS_TASK_ROLE_NAME} with your values
    gcloud iam workload-identity-pools providers create-aws mcp-proxy-aws \
+     --project="${PROJECT_ID}" \
      --workload-identity-pool="mcp-proxy-pool" \
      --location="global" \
-     --account-id="YOUR_AWS_ACCOUNT_ID"
+     --display-name="MCP Proxy AWS Provider" \
+     --account-id="${AWS_ACCOUNT_ID}" \
+     --attribute-mapping="google.subject=assertion.arn,attribute.aws_role=assertion.arn" \
+     --attribute-condition="attribute.aws_role.startsWith('arn:aws:sts::${AWS_ACCOUNT_ID}:assumed-role/${ECS_TASK_ROLE_NAME}/')"
+   ```
+   
+   **Example with actual values**:
+   ```bash
+   # If your AWS account ID is 123456789012 and ECS task role is mcp-proxy-task-role
+   gcloud iam workload-identity-pools providers create-aws mcp-proxy-aws \
+     --project="my-project-id" \
+     --workload-identity-pool="mcp-proxy-pool" \
+     --location="global" \
+     --display-name="MCP Proxy AWS Provider" \
+     --account-id="123456789012" \
+     --attribute-mapping="google.subject=assertion.arn,attribute.aws_role=assertion.arn" \
+     --attribute-condition="attribute.aws_role.startsWith('arn:aws:sts::123456789012:assumed-role/mcp-proxy-task-role/')"
    ```
 
-5. **Bind service account to Workload Identity**:
+6. **Bind service account to Workload Identity with specific role constraint**:
    ```bash
+   # TODO: Replace ${PROJECT_ID}, ${WORKLOAD_IDENTITY_POOL_ID}, ${AWS_ACCOUNT_ID}, and ${ECS_TASK_ROLE_NAME}
+   # ${WORKLOAD_IDENTITY_POOL_ID} is the full pool ID from step 4
    gcloud iam service-accounts add-iam-policy-binding \
-     mcp-proxy-sa@YOUR_PROJECT_ID.iam.gserviceaccount.com \
+     "mcp-proxy-sa@${PROJECT_ID}.iam.gserviceaccount.com" \
+     --project="${PROJECT_ID}" \
      --role="roles/iam.workloadIdentityUser" \
-     --member="principalSet://iam.googleapis.com/projects/PROJECT_NUMBER/locations/global/workloadIdentityPools/mcp-proxy-pool/attribute.aws_role/arn:aws:iam::YOUR_AWS_ACCOUNT_ID:role/YOUR_ECS_TASK_ROLE"
+     --member="principalSet://iam.googleapis.com/${WORKLOAD_IDENTITY_POOL_ID}/attribute.aws_role/arn:aws:sts::${AWS_ACCOUNT_ID}:assumed-role/${ECS_TASK_ROLE_NAME}"
    ```
 
-6. **Generate the Workload Identity configuration**:
+7. **Extract the Workload Identity Provider resource name**:
    ```bash
+   # TODO: Replace ${PROJECT_ID} with your GCP project ID
    gcloud iam workload-identity-pools providers describe mcp-proxy-aws \
+     --project="${PROJECT_ID}" \
+     --workload-identity-pool="mcp-proxy-pool" \
+     --location="global" \
+     --format="value(name)"
+   ```
+   
+   This will return the full provider name needed for the configuration file.
+
+8. **Generate the Workload Identity configuration**:
+   ```bash
+   # TODO: Replace ${PROJECT_ID} with your GCP project ID
+   gcloud iam workload-identity-pools providers describe mcp-proxy-aws \
+     --project="${PROJECT_ID}" \
      --workload-identity-pool="mcp-proxy-pool" \
      --location="global" \
      --format="export" > workload-identity-configuration.json
    ```
+
+#### Security Considerations for Workload Identity Federation
+
+🛡️ **Important Security Guidelines**:
+
+1. **Always use attribute conditions**: The attribute condition in step 5 ensures that only your specific AWS ECS task role can authenticate. Never create a provider without proper conditions.
+
+2. **Principle of least privilege**: Grant only the minimum required permissions to the service account:
+   ```bash
+   # Example: Grant only specific permissions needed for your use case
+   gcloud projects add-iam-policy-binding ${PROJECT_ID} \
+     --member="serviceAccount:mcp-proxy-sa@${PROJECT_ID}.iam.gserviceaccount.com" \
+     --role="roles/secretmanager.secretAccessor"
+   ```
+
+3. **Monitor and audit**: Enable audit logging for the service account and Workload Identity Pool:
+   ```bash
+   # Enable audit logs for IAM
+   gcloud logging sinks create wif-audit-sink \
+     bigquery.googleapis.com/projects/${PROJECT_ID}/datasets/security_audit \
+     --log-filter='protoPayload.serviceName="iam.googleapis.com"'
+   ```
+
+4. **Regular rotation**: Consider implementing regular rotation of the Workload Identity Provider if your AWS role ARNs change.
+
+For more detailed security guidance, see:
+- [Workload Identity Federation Best Practices](https://cloud.google.com/iam/docs/workload-identity-federation-with-other-clouds#security-considerations)
+- [AWS to Google Cloud Authentication](https://cloud.google.com/iam/docs/workload-identity-federation-with-other-clouds)
 
 ### 2. AWS Infrastructure Prerequisites
 
