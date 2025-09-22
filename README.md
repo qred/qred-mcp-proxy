@@ -6,6 +6,8 @@
 
 A production-ready MCP (Model Context Protocol) proxy system with enterprise-grade OAuth 2.1 authentication, deployable on AWS using CDK (TypeScript) infrastructure.
 
+**What is this solution?** The MCP Proxy bridges the gap between enterprise security requirements and the diverse landscape of MCP clients. It provides a unified, secure gateway that enables any MCP client to authenticate against Google Workspace and access multiple backend services through a single endpoint, regardless of the client's OAuth capabilities or limitations.
+
 ## Architecture Overview
 
 The system consists of three main components that work together to provide a secure, scalable MCP proxy solution:
@@ -31,6 +33,45 @@ The system consists of three main components that work together to provide a sec
 ## OAuth 2.1 Authentication with Client-Specific Routing
 
 The MCP proxy uses a sophisticated OAuth 2.1 sidecar service that provides enterprise-grade authentication with automatic client detection and routing.
+
+### Purpose and Design Philosophy
+
+The MCP Proxy system is designed to solve a fundamental challenge: **enabling secure, enterprise-grade authentication for MCP (Model Context Protocol) connections while maintaining compatibility across diverse client implementations**.
+
+**Core Problems Addressed**:
+
+1. **Enterprise Authentication Gap**: Most MCP implementations lack robust authentication mechanisms suitable for enterprise environments
+2. **Client Heterogeneity**: Different MCP clients (Claude Code, VS Code extensions, desktop applications) have varying OAuth capabilities and limitations
+3. **Security at Scale**: Need for centralized authentication, logging, and access control across multiple backend services
+4. **Developer Experience**: Simplifying the complexity of OAuth flows while maintaining security standards
+
+**Solution Architecture**: The OAuth sidecar acts as an intelligent authentication proxy that adapts to each client's capabilities, providing a unified, secure gateway to MCP services.
+
+### Why do we need an OAuth sidecar
+
+The OAuth sidecar serves as a **compatibility and security bridge** between diverse MCP clients and enterprise authentication requirements.
+
+#### 1. **Client Limitations & Compatibility**
+
+Many MCP clients have fundamental limitations when working with standard OAuth flows:
+
+- **Missing scope headers**: Some clients don't properly send OAuth scope parameters, causing identity provider authentication to fail
+- **Dynamic port mappings for callbacks**: Clients use randomized port mappings for localhost callbacks, requiring all possible localhost ports to be pre-registered (security risk)
+- **Inconsistent OAuth support**: Some clients require Dynamic Client Registration (DCR), but many OAuth providers (like Google) don't support this for security reasons
+- **Transport protocol variations**: Different clients prefer different transport mechanisms (HTTP vs STDIO)
+
+#### 2. **Enterprise Security Requirements**
+
+- **Centralized authentication**: Single point of control for user authentication and authorization
+- **Audit logging**: Comprehensive tracking of all user actions and authentication events
+- **Domain restrictions**: Ensuring only authorized Google Workspace users can access services
+- **Token management**: Secure handling of refresh tokens and session management
+
+#### 3. **Operational Simplification**
+
+- **Client-agnostic deployment**: Backend services don't need to handle OAuth complexity
+- **Consistent user experience**: Users get the same authentication flow regardless of their client choice
+- **Reduced configuration burden**: Clients only need to know the proxy endpoint, not individual service OAuth details
 
 ### How Authentication Works
 
@@ -377,15 +418,99 @@ Ensure your AWS credentials have permissions for:
 - Docker (for local development)
 
 ### 1. Configure Infrastructure
-```bash
-cd cdk/mcp-proxy
-cp config.example.toml config.toml
-# Edit config.toml with your AWS-specific values
 
-npm install
-npm run build
-npm run cdk deploy
-```
+The MCP Proxy uses AWS CDK (Cloud Development Kit) for infrastructure as code. The CDK configuration is located in `cdk/mcp-proxy/` and supports multiple environments.
+
+#### Initial CDK Setup
+
+1. **Navigate to the CDK directory**:
+   ```bash
+   cd cdk/mcp-proxy
+   ```
+
+2. **Install dependencies**:
+   ```bash
+   npm install
+   ```
+
+3. **Bootstrap CDK (first-time only)**:
+   ```bash
+   # Bootstrap for your AWS account and region
+   npm run cdk bootstrap
+   
+   # Or specify account and region explicitly
+   npx cdk bootstrap aws://ACCOUNT-NUMBER/REGION
+   ```
+
+4. **Configure environment settings**:
+   ```bash
+   # Copy the example configuration file
+   cp cdk.example.jsonc cdk.json
+   # Edit cdk.json with your AWS-specific values
+   ```
+
+#### Environment Configuration
+
+The system uses CDK context configuration through `cdk.json` for deployment settings:
+
+- **`cdk.json`**: Your deployment configuration (created from the example)
+- **`cdk.example.jsonc`**: Example configuration with comprehensive options and documentation
+
+The `cdk.example.jsonc` file contains extensive configuration examples including:
+
+**Key configuration sections**:
+- **VPC settings**: Existing VPC ID, subnet IDs, security groups
+- **Certificates**: ACM certificate ARN for HTTPS
+- **Secrets**: AWS Secrets Manager secret names and configurations
+- **Domain**: Route53 hosted zone and domain configuration
+- **Container images**: ECR repository URIs
+- **Environment variables**: Google Workspace domain, admin email, HTTPS domains
+- **Service configuration**: CPU, memory, scaling settings
+- **Database settings**: RDS instance configuration
+
+The example file includes detailed comments explaining each configuration option.
+
+See [CONFIGURATION.md](cdk/mcp-proxy/CONFIGURATION.md) for detailed configuration options.
+
+#### CDK Deployment Commands
+
+1. **Build the CDK project**:
+   ```bash
+   npm run build
+   ```
+
+2. **Preview changes (recommended)**:
+   ```bash
+   npm run cdk diff
+   ```
+
+3. **Deploy infrastructure**:
+   ```bash
+   npm run cdk deploy
+   ```
+
+4. **Deploy specific stacks** (if needed):
+   ```bash
+   # Deploy only the persistent stack (RDS, etc.)
+   npm run cdk deploy McpProxyPersistent
+   
+   # Deploy main application stack
+   npm run cdk deploy McpProxy
+   ```
+
+**Note**: Environment-specific configurations are handled through the `cdk.json` context values. You can customize deployment behavior by modifying the context settings in your `cdk.json` file.
+
+#### Deployment Architecture
+
+The CDK deploys several AWS resources:
+
+- **ECS Cluster**: Container orchestration for MCP Proxy and OAuth services
+- **Application Load Balancer**: HTTPS termination and traffic routing
+- **RDS PostgreSQL**: Database for audit logging and session management
+- **Secrets Manager**: Secure storage for OAuth credentials and API keys
+- **CloudWatch**: Logging and monitoring
+- **IAM Roles**: Service permissions and Workload Identity Federation
+- **Route53**: DNS configuration for your domain
 
 ### 2. Deploy Services
 After infrastructure is deployed, the containerized services will be automatically deployed via ECS.
@@ -418,6 +543,40 @@ claude mcp add --transport http mcp-proxy https://your-mcp-proxy-url/mcp
 ```
 
 The OAuth sidecar detects Claude Code clients and provides proxy endpoints to handle localhost callbacks seamlessly.
+
+## Client Configuration Deployment
+
+For enterprise environments, the project includes example deployment scripts to automatically configure MCP clients across multiple machines.
+
+### Automated Client Configuration
+
+The `client-config/deployment/` directory contains example scripts for deploying MCP configurations to client machines:
+
+- **`mcp-config-deployment.sh`**: Example macOS deployment script that:
+  - Configures VS Code, IntelliJ, and Claude Desktop clients
+  - Sets up MCP server configurations with your proxy endpoint
+  - Handles proxy settings and environment variables
+  - Creates backups of existing configurations
+  - Supports multiple MCP servers (proxy, GitHub, Atlassian, Sentry, Playwright)
+
+**Key features of the deployment script**:
+- **Multi-client support**: Automatically detects and configures VS Code, IntelliJ GitHub Copilot, and Claude Desktop
+- **Environment variables**: Configures HTTP/HTTPS proxy settings and no-proxy domains
+- **Backup management**: Creates timestamped backups before making changes
+- **Idempotent operations**: Safe to run multiple times, only updates when needed
+- **Logging**: Comprehensive logging for troubleshooting and audit purposes
+
+**Usage example**:
+```bash
+# Set your MCP proxy URL and run the deployment script
+export MCP_PROXY_URL="https://your-mcp-proxy-url/mcp"
+export HTTP_PROXY_URL="http://your-proxy-server:80"
+export HTTPS_PROXY_URL="http://your-proxy-server:80"
+
+./client-config/deployment/mcp-config-deployment.sh
+```
+
+This approach enables IT administrators to standardize MCP configurations across an organization and ensure all clients are properly configured to use the enterprise MCP proxy.
 
 ## Current Status
 
