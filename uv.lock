@@ -813,6 +813,18 @@ wheels = [
 ]
 
 [[package]]
+name = "pytest-json-ctrf"
+version = "0.3.5"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "pytest" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/88/1d/7f149972644af2cd1f3e49b17e9584af3f9df41ce84b5bfc5250abb44643/pytest_json_ctrf-0.3.5.tar.gz", hash = "sha256:3efc3afc6dd1fb69f73031217b1dfa239154241aaca63db8a8995cf3779bd7ff", size = 6665, upload-time = "2024-10-10T12:26:33.911Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/51/a8/d58637d10f70ae14a1ad18cb37f4aa32d5593510213d5f929892cb1c9c6d/pytest_json_ctrf-0.3.5-py3-none-any.whl", hash = "sha256:e82fd1d69be2f92385bc33540063e5ad7b17b36de67764c84f3ceb9815a895e9", size = 6837, upload-time = "2024-10-10T12:26:32.76Z" },
+]
+
+[[package]]
 name = "pytest-mock"
 version = "3.15.1"
 source = { registry = "https://pypi.org/simple" }
@@ -912,6 +924,7 @@ dev = [
     { name = "pytest" },
     { name = "pytest-asyncio" },
     { name = "pytest-cov" },
+    { name = "pytest-json-ctrf" },
     { name = "pytest-mock" },
 ]
 test = [
@@ -938,6 +951,7 @@ dev = [
     { name = "pytest", specifier = "==8.4.1" },
     { name = "pytest-asyncio", specifier = "==1.2.0" },
     { name = "pytest-cov", specifier = "==7.0.0" },
+    { name = "pytest-json-ctrf", specifier = "==0.3.5" },
     { name = "pytest-mock", specifier = "==3.15.1" },
 ]
 test = [
