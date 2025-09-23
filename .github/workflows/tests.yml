@@ -1,4 +1,4 @@
-name: "Run unit tests"
+name: "Code Quality & Tests"
 
 on:
   pull_request:
@@ -9,7 +9,7 @@ permissions:
   contents: read
 
 jobs:
-  run-unit-tests:
+  code-quality-and-tests:
     runs-on: ubuntu-latest
     permissions:
       actions: read
