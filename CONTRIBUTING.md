@@ -134,13 +134,10 @@ If you need more control or are working on specific components:
    uv run pre-commit run --all-files
 
    # Or run individual tools
-   uv run ruff check .
+   uv run ruff check .          # Includes security scanning (S rule set)
    uv run ruff format .
    uv run mypy .
-   uv run bandit -r .
-   ```
-
-4. **Run tests**:
+   ```4. **Run tests**:
    ```bash
    # Python tests
    uv run pytest
@@ -339,8 +336,8 @@ cd cdk/mcp-proxy && npm test
 # Infrastructure tests
 cd cdk/mcp-proxy && npm run test:integ
 
-# Security tests
-uv run bandit -r .
+# Security checks (included in ruff linting)
+uv run ruff check .  # Includes security rules (S rule set)
 ```
 
 ### Test Guidelines
