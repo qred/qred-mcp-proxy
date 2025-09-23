@@ -1,6 +1,6 @@
 import logging
-import sys
 import os
+import sys
 
 
 def set_debug_mode(debug: bool) -> None:

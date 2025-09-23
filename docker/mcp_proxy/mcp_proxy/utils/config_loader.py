@@ -6,9 +6,10 @@ This module provides functionality to load named server configurations from JSON
 import json
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Union
+from typing import TypeAlias
 
 from mcp.client.stdio import StdioServerParameters
+
 from .logger import logger
 
 
@@ -21,7 +22,7 @@ class HttpServerParameters:
 
 
 # Union type for different server parameter types
-ServerParameters = Union[StdioServerParameters, HttpServerParameters]
+ServerParameters: TypeAlias = StdioServerParameters | HttpServerParameters
 
 
 def load_named_server_configs_from_file(

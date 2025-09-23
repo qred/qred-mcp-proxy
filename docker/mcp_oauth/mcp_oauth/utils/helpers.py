@@ -1,16 +1,17 @@
 """Helper functions for OAuth sidecar."""
 
-import os
-import httpx
-from typing import Optional, Dict, Any
 import logging
+import os
+from typing import Any
+
+import httpx
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 
-async def validate_google_oauth_token(access_token: str) -> Optional[Dict[str, Any]]:
+async def validate_google_oauth_token(access_token: str) -> dict[str, Any] | None:
     """
     Validate Google OAuth access token against Google's userinfo endpoint.
 
@@ -44,8 +45,8 @@ async def validate_google_oauth_token(access_token: str) -> Optional[Dict[str, A
 
 
 async def validate_google_oauth_token_with_client_check(
-    access_token: str, expected_client_id: Optional[str] = None
-) -> Optional[Dict[str, Any]]:
+    access_token: str, expected_client_id: str | None = None
+) -> dict[str, Any] | None:
     """
     Validate Google OAuth access token and optionally verify the client ID that issued it.
 
@@ -125,8 +126,8 @@ def check_req_env_vars(required_env_vars: list[str]) -> None:
 
 
 def extract_user_from_request(
-    headers: Dict[str, str], query_params: Dict[str, str]
-) -> Optional[str]:
+    headers: dict[str, str], query_params: dict[str, str]
+) -> str | None:
     """
     Extract OAuth Bearer token from request Authorization header.
 

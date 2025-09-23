@@ -1,17 +1,19 @@
 """FastAPI server for MCP OAuth service."""
 
-import os
+import asyncio
 import json
+import os
 import time
 import uuid
-import httpx
-import asyncio
-from datetime import datetime, timezone
-from typing import Any, Dict, Tuple, Optional, AsyncIterator
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
+from datetime import UTC, datetime
+from pathlib import Path
+from typing import Any
 
-from fastapi import FastAPI, Request, HTTPException
-from fastapi.responses import JSONResponse, Response, RedirectResponse, HTMLResponse
+import httpx
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Response
 from starlette.middleware.cors import CORSMiddleware
 
 # OAuth validation functionality (extracted from main MCP server)
@@ -24,7 +26,7 @@ FORCE_HTTPS_DOMAINS = os.getenv("FORCE_HTTPS_DOMAINS", "").split(",")
 
 # OAuth callback forwarding for Claude Code localhost callbacks
 # Format: {session_id: (localhost_callback_url, timestamp)}
-_callback_forwarding: Dict[str, Tuple[str, float]] = {}
+_callback_forwarding: dict[str, tuple[str, float]] = {}
 _callback_forwarding_ttl = 900  # 15 minutes TTL for callback sessions
 
 
@@ -50,14 +52,14 @@ dcr_client_secret: str | None = None
 valid_mcp_callbacks: list[str] | None = None
 
 # OAuth configuration - initialized during startup
-_oauth_info: Dict[str, Any] = {}
+_oauth_info: dict[str, Any] = {}
 
 # MCP server configuration - initialized during startup
-_mcp_servers_config: Dict[str, Any] = {}
+_mcp_servers_config: dict[str, Any] = {}
 _required_groups: set[str] = set()
 
 # Scheduled refresh system
-_refresh_task: Optional[asyncio.Task] = None
+_refresh_task: asyncio.Task | None = None
 _refresh_groups_interval_minutes: int = 15  # Default groups refresh interval
 _refresh_users_interval_minutes: int = 60  # Default users refresh interval
 
@@ -199,7 +201,7 @@ def initialize_mcp_servers_config() -> None:
 
     try:
         # Load MCP servers configuration
-        with open(config_path, "r") as f:
+        with Path(config_path).open() as f:
             _mcp_servers_config = json.load(f)
 
         # Extract all required groups from server configurations
@@ -641,7 +643,7 @@ async def refresh_status() -> dict[str, Any]:
         "refresh_architecture": "independent_loops",  # Indicate the new architecture
         "refresh_groups_interval_minutes": _refresh_groups_interval_minutes,
         "refresh_users_interval_minutes": _refresh_users_interval_minutes,
-        "required_groups": sorted(list(_required_groups)) if _required_groups else [],
+        "required_groups": sorted(_required_groups) if _required_groups else [],
         "refresh_task_running": (
             _refresh_task is not None and not _refresh_task.done()
             if _refresh_task
@@ -786,7 +788,7 @@ async def dynamic_client_registration(request: Request) -> JSONResponse:
         )
 
     # Current timestamp
-    issued_at = int(datetime.now(timezone.utc).timestamp())
+    issued_at = int(datetime.now(UTC).timestamp())
     # Set expiration to 1 year from now (0 means no expiration per RFC 7591)
     expires_at = issued_at + (365 * 24 * 60 * 60)  # 1 year
 
@@ -1609,7 +1611,7 @@ async def validate_user_with_groups(request: Request) -> JSONResponse:
                     group_error,
                 )
                 # Return empty group memberships on error, but don't fail the validation
-                group_memberships = {group: False for group in groups_to_check}
+                group_memberships = dict.fromkeys(groups_to_check, False)
 
         return JSONResponse(
             {

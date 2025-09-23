@@ -3,9 +3,10 @@
 import asyncio
 import logging
 import time
+
 import httpx
-from typing import Dict, Optional, Tuple
 from mcp.client.stdio import StdioServerParameters
+
 from .config_loader import HttpServerParameters, ServerParameters
 
 logger = logging.getLogger(__name__)
@@ -17,7 +18,7 @@ class ProcessHealthChecker:
     @staticmethod
     async def check_process_health(
         params: ServerParameters, timeout: float = 10.0
-    ) -> Tuple[bool, Optional[str]]:
+    ) -> tuple[bool, str | None]:
         """
         Check if a server can be reached successfully.
 
@@ -36,7 +37,7 @@ class ProcessHealthChecker:
     @staticmethod
     async def check_http_health(
         params: HttpServerParameters, timeout: float = 10.0
-    ) -> Tuple[bool, Optional[str]]:
+    ) -> tuple[bool, str | None]:
         """
         Check if an HTTP MCP server is reachable.
 
@@ -71,7 +72,7 @@ class ProcessHealthChecker:
     @staticmethod
     async def check_stdio_health(
         params: StdioServerParameters, timeout: float = 10.0
-    ) -> Tuple[bool, Optional[str]]:
+    ) -> tuple[bool, str | None]:
         """
         Check if a STDIO process can start successfully.
 
@@ -102,7 +103,7 @@ class ProcessHealthChecker:
     @staticmethod
     async def _check_mcp_remote_health(
         params: StdioServerParameters, timeout: float
-    ) -> Tuple[bool, Optional[str]]:
+    ) -> tuple[bool, str | None]:
         """Check if mcp-remote command can be executed."""
         try:
             # Test if we can at least run the command without errors
@@ -116,7 +117,7 @@ class ProcessHealthChecker:
             )
 
             try:
-                stdout, stderr = await asyncio.wait_for(
+                _stdout, stderr = await asyncio.wait_for(
                     process.communicate(), timeout=timeout
                 )
 
@@ -126,7 +127,7 @@ class ProcessHealthChecker:
                     error_output = stderr.decode() if stderr else "Unknown error"
                     return False, f"mcp-remote command failed: {error_output}"
 
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 process.kill()
                 await process.wait()
                 return False, f"mcp-remote command timed out after {timeout}s"
@@ -137,7 +138,7 @@ class ProcessHealthChecker:
     @staticmethod
     async def _check_basic_process_health(
         params: StdioServerParameters, timeout: float
-    ) -> Tuple[bool, Optional[str]]:
+    ) -> tuple[bool, str | None]:
         """Check if a basic process can start."""
         try:
             # For Java apps, check if we can get version info
@@ -151,14 +152,14 @@ class ProcessHealthChecker:
                 )
 
                 try:
-                    stdout, stderr = await asyncio.wait_for(
+                    _stdout, _stderr = await asyncio.wait_for(
                         process.communicate(), timeout=5
                     )
                     if process.returncode == 0:
                         return True, None
                     else:
                         return False, "Java not available"
-                except asyncio.TimeoutError:
+                except TimeoutError:
                     process.kill()
                     await process.wait()
                     return False, "Java version check timed out"
@@ -171,7 +172,7 @@ class ProcessHealthChecker:
                     stdout=asyncio.subprocess.PIPE,
                     stderr=asyncio.subprocess.PIPE,
                 )
-                stdout, stderr = await process.communicate()
+                _stdout, _stderr = await process.communicate()
 
                 if process.returncode == 0:
                     return True, None
@@ -186,8 +187,8 @@ class ProcessHealthChecker:
 
 
 async def validate_backend_processes(
-    backend_params: Dict[str, ServerParameters], max_concurrent: int = 3
-) -> Dict[str, Tuple[bool, Optional[str], float]]:
+    backend_params: dict[str, ServerParameters], max_concurrent: int = 3
+) -> dict[str, tuple[bool, str | None, float]]:
     """
     Validate multiple backend servers concurrently.
 
@@ -202,7 +203,7 @@ async def validate_backend_processes(
 
     async def check_single_backend(
         name: str, params: ServerParameters
-    ) -> tuple[str, tuple[bool, Optional[str], float]]:
+    ) -> tuple[str, tuple[bool, str | None, float]]:
         async with semaphore:
             logger.info("Health checking backend '%s'", name)
             start_time = time.time()

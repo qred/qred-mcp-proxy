@@ -5,8 +5,8 @@ import logging
 import time
 from collections.abc import AsyncIterator
 from dataclasses import dataclass
-from datetime import datetime, timezone
-from typing import Any, Literal, Dict
+from datetime import UTC, datetime
+from typing import Any, Literal
 
 import uvicorn
 from mcp.client.session import ClientSession
@@ -23,14 +23,14 @@ from starlette.responses import JSONResponse, Response
 from starlette.routing import BaseRoute, Mount, Route
 from starlette.types import ASGIApp, Receive, Scope, Send
 
-from .proxy_server import create_proxy_server
-from ..utils.config_loader import ServerParameters, HttpServerParameters
-from .aggregated_proxy_server import create_aggregated_proxy_server, set_user_context
-from .oauth_client import validate_request_user
+from ..utils.config_loader import HttpServerParameters, ServerParameters
 from ..utils.logger import logger
 from ..utils.process_health import validate_backend_processes
 from ..utils.startup_mitigation import StartupMitigation
 from ..utils.startup_monitor import StartupMonitor
+from .aggregated_proxy_server import create_aggregated_proxy_server, set_user_context
+from .oauth_client import validate_request_user
+from .proxy_server import create_proxy_server
 
 # Configure httpx logging to prevent token leakage and reduce noise
 logging.getLogger("httpx").setLevel(logging.WARNING)
@@ -121,7 +121,7 @@ class MCPServerSettings:
 
 # To store last activity for multiple servers if needed, though status endpoint is global for now.
 _global_status: dict[str, Any] = {
-    "api_last_activity": datetime.now(timezone.utc).isoformat(),
+    "api_last_activity": datetime.now(UTC).isoformat(),
     "server_instances": {},  # Could be used to store per-instance status later
     "authentication": {
         "type": "oauth_sidecar",
@@ -132,7 +132,7 @@ _global_status: dict[str, Any] = {
 
 
 def _update_global_activity() -> None:
-    _global_status["api_last_activity"] = datetime.now(timezone.utc).isoformat()
+    _global_status["api_last_activity"] = datetime.now(UTC).isoformat()
 
 
 async def _handle_status(_: Request) -> Response:
@@ -163,14 +163,12 @@ def create_single_instance_routes(
 
     async def handle_sse_instance(request: Request) -> Response:
         # Validate user if Google auth is required
-        user_email = None
-        access_token = None
         if google_auth_required:
             (
                 user_valid,
-                user_email,
+                _user_email,
                 error_code,
-                access_token,
+                _access_token,
             ) = await _validate_user_request(request)
             if not user_valid:
                 # Include WWW-Authenticate header as per RFC 6750 for OAuth discovery
@@ -232,7 +230,7 @@ def create_single_instance_routes(
         async with sse_transport.connect_sse(
             request.scope,
             request.receive,
-            request._send,  # noqa: SLF001
+            request._send,
         ) as (read_stream, write_stream):
             _update_global_activity()
             await mcp_server_instance.run(
@@ -462,7 +460,7 @@ async def run_mcp_server(
             )
 
             # Collect all backend server parameters
-            all_backends: Dict[str, ServerParameters] = {}
+            all_backends: dict[str, ServerParameters] = {}
             if default_server_params:
                 all_backends["default"] = default_server_params
             all_backends.update(named_server_params)

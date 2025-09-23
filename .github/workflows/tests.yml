@@ -43,10 +43,9 @@ jobs:
           echo "🔍 Running pre-commit hooks (same as local development)..."
           echo ""
           echo "This uses the exact same configuration as local development:"
-          echo "• 🔧 Ruff Linter - Fast Python linter (imports, style, errors, bugs)"
+          echo "• 🔧 Ruff Linter - Fast Python linter (imports, style, errors, bugs, security)"
           echo "• 🎨 Ruff Formatter - Consistent code formatting (88-character line length)"
           echo "• 🔬 MyPy Type Checking - Static type analysis and type safety"
-          echo "• 🔒 Bandit Security Scanner - Security vulnerability detection"
           echo "• ✂️ Trim Trailing Whitespace - Remove unnecessary whitespace"
           echo "• 📄 Fix End of Files - Ensure files end with newlines"
           echo "• 📋 Check YAML - Validate YAML syntax"
@@ -55,7 +54,7 @@ jobs:
           echo ""
 
           # Run all pre-commit hooks
-          uv run pre-commit run --all-files
+          uv run pre-commit run --all-files --hook-stage manual
 
           echo ""
           echo "🎉 All pre-commit hooks completed successfully!"
@@ -70,17 +69,16 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Hook | Purpose | Status |" >> $GITHUB_STEP_SUMMARY
           echo "|------|---------|--------|" >> $GITHUB_STEP_SUMMARY
-          echo "| 🔧 **Ruff Linter** | Import organization, code style, error detection | ✅ Passed |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🔧 **Ruff Linter** | Import organization, code style, error detection, security | ✅ Passed |" >> $GITHUB_STEP_SUMMARY
           echo "| 🎨 **Ruff Formatter** | Consistent code formatting (88-char line length) | ✅ Passed |" >> $GITHUB_STEP_SUMMARY
           echo "| 🔬 **MyPy** | Static type analysis and type safety | ✅ Passed |" >> $GITHUB_STEP_SUMMARY
-          echo "| 🔒 **Bandit** | Security vulnerability scanning | ✅ Passed |" >> $GITHUB_STEP_SUMMARY
           echo "| ✂️ **Trim Whitespace** | Remove trailing whitespace | ✅ Passed |" >> $GITHUB_STEP_SUMMARY
           echo "| 📄 **Fix End of Files** | Ensure proper file endings | ✅ Passed |" >> $GITHUB_STEP_SUMMARY
           echo "| 📋 **Check YAML** | Validate YAML syntax | ✅ Passed |" >> $GITHUB_STEP_SUMMARY
           echo "| 🔍 **Check JSON** | Validate JSON syntax | ✅ Passed |" >> $GITHUB_STEP_SUMMARY
           echo "| 🔀 **Check Merge Conflicts** | Detect unresolved conflicts | ✅ Passed |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "🏆 **Total Quality Checks**: 9 hooks executed" >> $GITHUB_STEP_SUMMARY
+          echo "🏆 **Total Quality Checks**: 8 hooks executed" >> $GITHUB_STEP_SUMMARY
 
       - name: Run OAuth server tests
         run: |

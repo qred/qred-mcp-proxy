@@ -1,7 +1,8 @@
 """Simplified startup mitigation utilities for MCP backends."""
 
 import asyncio
-from typing import Dict, List
+from pathlib import Path
+
 from mcp.client.stdio import StdioServerParameters
 
 from .logger import logger
@@ -75,7 +76,7 @@ class StartupMitigation:
             return False
 
     @staticmethod
-    async def verify_java_environment(jar_paths: List[str]) -> bool:
+    async def verify_java_environment(jar_paths: list[str]) -> bool:
         """
         Verify Java environment and JAR files.
 
@@ -109,10 +110,8 @@ class StartupMitigation:
             logger.info("Java version: %s", version_line.strip())
 
             # 2. Verify JAR files exist
-            import os
-
             for jar_path in jar_paths:
-                if os.path.exists(jar_path):
+                if Path(jar_path).exists():
                     logger.info("JAR file verified: %s", jar_path)
                 else:
                     logger.error("JAR file not found: %s", jar_path)
@@ -126,8 +125,8 @@ class StartupMitigation:
 
     @staticmethod
     async def apply_startup_mitigations(
-        backend_params: Dict[str, StdioServerParameters],
-    ) -> Dict[str, StdioServerParameters]:
+        backend_params: dict[str, StdioServerParameters],
+    ) -> dict[str, StdioServerParameters]:
         """
         Apply basic startup validation and return backend parameters.
 

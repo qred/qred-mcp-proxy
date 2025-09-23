@@ -1,7 +1,7 @@
 """Token validation functionality for OAuth service."""
 
 import time
-from typing import Optional, Dict, NamedTuple
+from typing import NamedTuple
 
 from .gcp.google_wif import google_wif_config
 
@@ -10,20 +10,20 @@ class ValidationResult(NamedTuple):
     """Result of token validation."""
 
     is_valid: bool
-    client_id: Optional[str] = None
-    user_email: Optional[str] = None
-    user_name: Optional[str] = None
-    expires_at: Optional[float] = None
-    error: Optional[str] = None
+    client_id: str | None = None
+    user_email: str | None = None
+    user_name: str | None = None
+    expires_at: float | None = None
+    error: str | None = None
 
 
 # In-memory cache for token validation results
-_token_cache: Dict[str, ValidationResult] = {}
+_token_cache: dict[str, ValidationResult] = {}
 _cache_ttl = 300  # 5 minutes
 
 
 async def validate_oauth_token(
-    token: str, expected_client_id: Optional[str] = None
+    token: str, expected_client_id: str | None = None
 ) -> ValidationResult:
     """
     Validate OAuth token using Google Workspace validation.
@@ -85,7 +85,7 @@ async def validate_oauth_token(
 
     except Exception as e:
         return ValidationResult(
-            is_valid=False, error=f"Unexpected error during token validation: {str(e)}"
+            is_valid=False, error=f"Unexpected error during token validation: {e!s}"
         )
 
 

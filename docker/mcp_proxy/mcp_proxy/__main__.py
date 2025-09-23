@@ -17,8 +17,8 @@ from importlib.metadata import version
 
 from mcp.client.stdio import StdioServerParameters
 
-from .utils.config_loader import load_named_server_configs_from_file, ServerParameters
 from .server.mcp_server import MCPServerSettings, run_mcp_server
+from .utils.config_loader import ServerParameters, load_named_server_configs_from_file
 from .utils.logger import logger, set_debug_mode
 
 # Deprecated env var. Here for backwards compatibility.
@@ -54,7 +54,7 @@ def _add_arguments_to_parser(parser: argparse.ArgumentParser) -> None:
     """Add all arguments to the argument parser."""
     try:
         package_version = version("mcp-proxy")
-    except Exception:  # noqa: BLE001
+    except Exception:
         package_version = "unknown"
 
     parser.add_argument(

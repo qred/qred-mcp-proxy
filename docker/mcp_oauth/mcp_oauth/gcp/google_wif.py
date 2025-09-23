@@ -1,23 +1,21 @@
 """Google Workload Identity Federation for OAuth sidecar."""
 
+import json
+import logging
 import os
 import time
-import json
-from datetime import datetime, timezone
-from typing import Optional, Dict, Any, List
 from dataclasses import dataclass
+from datetime import UTC, datetime
+from typing import Any
 
+import boto3
+import google.oauth2.credentials
+import requests
 from google.auth import environment_vars
 from google.auth.aws import Credentials as AWSCredentials
 from google.auth.transport.requests import AuthorizedSession
-import google.oauth2.credentials
-from googleapiclient.discovery import build, Resource
-
-import requests
+from googleapiclient.discovery import Resource, build
 from requests.exceptions import HTTPError
-
-import boto3
-import logging
 
 from ..utils.helpers import (
     check_req_env_vars,
@@ -36,9 +34,9 @@ class UserInfo:
     """User information from Google Workspace."""
 
     email: str
-    name: Optional[str] = None
+    name: str | None = None
     is_valid: bool = True
-    permissions: Optional[list[str]] = None
+    permissions: list[str] | None = None
 
     def __post_init__(self) -> None:
         if self.permissions is None:
@@ -49,12 +47,12 @@ class UserInfo:
 class ValidationResult:
     """Result of OAuth token validation with detailed error information."""
 
-    user_info: Optional[UserInfo] = None
+    user_info: UserInfo | None = None
     is_valid: bool = False
-    error_type: Optional[str] = (
+    error_type: str | None = (
         None  # "invalid_token", "invalid_client", "workspace_denied", "group_access_denied", "group_validation_error"
     )
-    error_description: Optional[str] = None
+    error_description: str | None = None
 
 
 class GoogleWIF:
@@ -71,7 +69,7 @@ class GoogleWIF:
         check_req_env_vars(required_env_vars)
 
         self.sa_email: str = os.getenv("SA_EMAIL", "")
-        self.google_api_auth_scopes: List[str] = [
+        self.google_api_auth_scopes: list[str] = [
             "https://www.googleapis.com/auth/cloud-platform"
         ]
 
@@ -83,7 +81,7 @@ class GoogleWIF:
                     "GCP_SECRET_ARN environment variable is empty or not set"
                 )
 
-            self.sa_info: Dict[str, Any] = json.loads(gcp_secret_json)
+            self.sa_info: dict[str, Any] = json.loads(gcp_secret_json)
 
             if not self.sa_info:
                 raise ValueError("Parsed JSON from GCP_SECRET_ARN is empty")
@@ -105,9 +103,9 @@ class GoogleWIF:
             raise ValueError(f"Failed to load Google WIF configuration: {e}") from e
 
         self.user_agent: str = os.getenv("GOOGLE_USER_AGENT", "mcp-oauth-proxy")
-        self.admin_service: Optional[Resource] = None
-        self.google_users: Optional[Dict[str, Dict[str, Any]]] = None
-        self.credentials: Optional[google.oauth2.credentials.Credentials] = None
+        self.admin_service: Resource | None = None
+        self.google_users: dict[str, dict[str, Any]] | None = None
+        self.credentials: google.oauth2.credentials.Credentials | None = None
 
         # Google Workspace admin email for directory access
         # This should be a service account with admin privileges
@@ -126,23 +124,23 @@ class GoogleWIF:
             "GOOGLE_WORKSPACE_DOMAIN", "your-domain.com"
         )
 
-        self.target_scopes: List[str] = [
+        self.target_scopes: list[str] = [
             "https://www.googleapis.com/auth/admin.directory.user.readonly",
             "https://www.googleapis.com/auth/admin.directory.group.readonly",
         ]
-        self.expiration: datetime = datetime.now(timezone.utc)
+        self.expiration: datetime = datetime.now(UTC)
 
         # User data management
-        self.last_users_refresh: Dict[str, datetime] = {}
+        self.last_users_refresh: dict[str, datetime] = {}
         self.users_refresh_interval: int = 600  # 10 minutes in seconds
 
         # Group data management
-        self.google_team_groups: Optional[Dict[str, List[str]]] = None
-        self.last_groups_refresh: Dict[str, datetime] = {}
+        self.google_team_groups: dict[str, list[str]] | None = None
+        self.last_groups_refresh: dict[str, datetime] = {}
         self.groups_refresh_interval: int = 600  # 10 minutes in seconds
 
         # AWS credential management for long-running processes
-        self._boto_session: Optional[boto3.Session] = None
+        self._boto_session: boto3.Session | None = None
         self._credential_refresh_lock = False
 
         # Build the users and groups lookup dictionaries at startup
@@ -215,7 +213,7 @@ class GoogleWIF:
                     "Starting impersonation (attempt %d/%d)", attempt + 1, max_retries
                 )
 
-                new_expiration = datetime.now(timezone.utc)
+                new_expiration = datetime.now(UTC)
                 unsigned_jwt = self.__build_domain_wide_delegation_jwt(
                     self.sa_email,
                     self.impersonation_email,
@@ -249,7 +247,7 @@ class GoogleWIF:
                 ):
                     try:
                         expiry_time = aws_credentials._expiry_time
-                        time_until_expiry = expiry_time - datetime.now(timezone.utc)  # type: ignore[operator]
+                        time_until_expiry = expiry_time - datetime.now(UTC)  # type: ignore[operator]
                         auth_logger.info(
                             "AWS credentials expire in: %s", time_until_expiry
                         )
@@ -365,7 +363,7 @@ class GoogleWIF:
         )
 
     def __build_domain_wide_delegation_jwt(
-        self, service_account: str, subject: str, scopes: List[str], lifetime: int
+        self, service_account: str, subject: str, scopes: list[str], lifetime: int
     ) -> str:
         """Create the payload to sign with JWT."""
         now = int(time.time())
@@ -416,7 +414,7 @@ class GoogleWIF:
         )
         logger.info("Built admin service")
 
-    def __get_users(self, org_unit_path: Optional[str] = None) -> None:
+    def __get_users(self, org_unit_path: str | None = None) -> None:
         """
         This function fetches all users' information at once.
         Implements a timeout mechanism to avoid excessive API calls.
@@ -429,7 +427,7 @@ class GoogleWIF:
             org_unit_path = self.default_org_unit_path
 
         # Check if we've refreshed users for this org_unit_path recently
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         last_refresh = self.last_users_refresh.get(org_unit_path)
 
         if (
@@ -444,7 +442,7 @@ class GoogleWIF:
             )
             return
 
-        google_users: Dict[str, Dict[str, Any]] = {}
+        google_users: dict[str, dict[str, Any]] = {}
         try:
             if not self.admin_service or (self.expiration < now):
                 self.__get_admin_service()
@@ -455,7 +453,7 @@ class GoogleWIF:
             logger.info(
                 "Fetching Google Workspace users for org unit: %s", org_unit_path
             )
-            page_token: Optional[str] = None
+            page_token: str | None = None
             user_count = 0
 
             while True:
@@ -471,7 +469,7 @@ class GoogleWIF:
                     )
                     .execute()
                 )
-                users: List[Dict[str, Any]] = user_response.get("users", [])
+                users: list[dict[str, Any]] = user_response.get("users", [])
 
                 for user in users:
                     primary_email = user.get("primaryEmail")
@@ -517,7 +515,7 @@ class GoogleWIF:
             "Initialized empty groups lookup dictionary (will be populated by server startup process)"
         )
 
-    async def refresh_groups(self, groups: List[str]) -> None:
+    async def refresh_groups(self, groups: list[str]) -> None:
         """
         Refresh group membership data for the specified groups.
         This can be called during startup or for periodic refreshes.
@@ -537,7 +535,7 @@ class GoogleWIF:
             logger.warning(f"Failed to load groups: {e}")
             # Don't fail if group refresh fails
 
-    def refresh_users(self, org_unit_path: Optional[str] = None) -> None:
+    def refresh_users(self, org_unit_path: str | None = None) -> None:
         """
         Refresh user data for the specified organizational unit.
         This can be called during startup or for periodic refreshes.
@@ -564,14 +562,14 @@ class GoogleWIF:
             # Don't fail if user refresh fails
 
     async def __get_user(
-        self, user_identifier: str, org_unit_path: Optional[str] = None
+        self, user_identifier: str, org_unit_path: str | None = None
     ) -> UserInfo:
         """Get a specific user from Google Workspace with intelligent caching."""
         # Use default org unit path if none provided
         if org_unit_path is None:
             org_unit_path = self.default_org_unit_path
 
-        user: Dict[str, Any] = {}
+        user: dict[str, Any] = {}
         is_valid = False
 
         # Initial user lookup check
@@ -591,7 +589,7 @@ class GoogleWIF:
                 is_valid = True
             else:
                 # Check if we can refresh the data (respect interval)
-                now = datetime.now(timezone.utc)
+                now = datetime.now(UTC)
                 last_refresh = self.last_users_refresh.get(org_unit_path)
 
                 if (
@@ -653,8 +651,8 @@ class GoogleWIF:
         )
 
     async def __get_group_members(
-        self, groups: List[str], force_refresh: bool = False
-    ) -> Dict[str, List[str]]:
+        self, groups: list[str], force_refresh: bool = False
+    ) -> dict[str, list[str]]:
         """
         Get the group members of the requested groups with intelligent caching.
         Requires a google admin sdk credential with at least groups.readonly scope.
@@ -667,7 +665,7 @@ class GoogleWIF:
             Dictionary mapping group names to lists of member emails
         """
         # Check if we need to refresh group data
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
         # Check which groups need to be refreshed or can use current data
         groups_to_refresh = []
@@ -832,7 +830,7 @@ class GoogleWIF:
 
         return result
 
-    async def get_group_members(self, group: str, user: str) -> Dict[str, bool]:
+    async def get_group_members(self, group: str, user: str) -> dict[str, bool]:
         """
         Public method to check if a user is part of a specific group.
         Uses cached data (even if stale) and only fetches if cache is completely empty.
@@ -861,7 +859,7 @@ class GoogleWIF:
         logger.debug("User %s membership in group %s: %s", user, group, is_member)
         return {group: is_member}
 
-    async def check_user_groups(self, user: str, groups: List[str]) -> Dict[str, bool]:
+    async def check_user_groups(self, user: str, groups: list[str]) -> dict[str, bool]:
         """
         Check if a user is a member of multiple groups efficiently.
         Uses cached data (even if stale) to avoid triggering individual refreshes.
@@ -890,7 +888,7 @@ class GoogleWIF:
         logger.info("User %s group membership check: %s", user, result)
         return result
 
-    async def get_user_groups(self, user: str) -> List[str]:
+    async def get_user_groups(self, user: str) -> list[str]:
         """
         Get all groups that a user belongs to from the currently cached groups.
         Note: This only checks groups that have been previously fetched.
@@ -911,7 +909,7 @@ class GoogleWIF:
         logger.debug("User %s belongs to groups: %s", user, user_groups)
         return user_groups
 
-    def clear_group_data(self, groups: Optional[List[str]] = None) -> None:
+    def clear_group_data(self, groups: list[str] | None = None) -> None:
         """
         Clear the group membership data for specific groups or all groups.
 
@@ -938,10 +936,10 @@ class GoogleWIF:
     async def validate_oauth_token_with_groups(
         self,
         access_token: str,
-        required_groups: Optional[List[str]] = None,
+        required_groups: list[str] | None = None,
         require_all_groups: bool = False,
-        org_unit_path: Optional[str] = None,
-        expected_client_id: Optional[str] = None,
+        org_unit_path: str | None = None,
+        expected_client_id: str | None = None,
     ) -> ValidationResult:
         """
         Validate Google OAuth access token, check workspace membership, and optionally validate group membership.
@@ -1032,14 +1030,14 @@ class GoogleWIF:
             return ValidationResult(
                 is_valid=False,
                 error_type="group_validation_error",
-                error_description=f"Failed to validate group membership: {str(e)}",
+                error_description=f"Failed to validate group membership: {e!s}",
             )
 
     async def validate_oauth_token(
         self,
         access_token: str,
-        org_unit_path: Optional[str] = None,
-        expected_client_id: Optional[str] = None,
+        org_unit_path: str | None = None,
+        expected_client_id: str | None = None,
     ) -> ValidationResult:
         """Validate Google OAuth access token and check if user is in workspace."""
 
@@ -1048,7 +1046,7 @@ class GoogleWIF:
             org_unit_path = self.default_org_unit_path
 
         # First, validate the token with Google
-        user_info: Optional[Dict[str, Any]] = None
+        user_info: dict[str, Any] | None = None
 
         if expected_client_id:
             auth_logger.debug(
@@ -1147,7 +1145,7 @@ class _LazyGoogleWIFConfig:
     """Lazy loader for GoogleWIF configuration that only initializes when accessed."""
 
     def __init__(self) -> None:
-        self._instance: Optional[GoogleWIF] = None
+        self._instance: GoogleWIF | None = None
 
     def __getattr__(self, name: str) -> Any:
         """Lazy load the GoogleWIF instance when any attribute is accessed."""

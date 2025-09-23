@@ -6,14 +6,15 @@ This server is created independent of any transport mechanism.
 import typing as t
 
 from mcp import server, types
-from mcp.shared.exceptions import McpError
 from mcp.client.session import ClientSession
+from mcp.shared.exceptions import McpError
+
 from ..utils.logger import logger
 
 
 async def create_proxy_server(
     remote_app: ClientSession,
-) -> server.Server[object]:  # noqa: C901, PLR0915
+) -> server.Server[object]:
     """Create a server instance from a remote app."""
     logger.debug("Sending initialization request to remote MCP server...")
     response = await remote_app.initialize()
@@ -25,7 +26,7 @@ async def create_proxy_server(
     if capabilities.prompts:
         logger.debug("Capabilities: adding Prompts...")
 
-        async def _list_prompts(_: t.Any) -> types.ServerResult:  # noqa: ANN401
+        async def _list_prompts(_: t.Any) -> types.ServerResult:
             result = await remote_app.list_prompts()
             return types.ServerResult(result)
 
@@ -40,7 +41,7 @@ async def create_proxy_server(
     if capabilities.resources:
         logger.debug("Capabilities: adding Resources...")
 
-        async def _list_resources(_: t.Any) -> types.ServerResult:  # noqa: ANN401
+        async def _list_resources(_: t.Any) -> types.ServerResult:
             result = await remote_app.list_resources()
             return types.ServerResult(result)
 
@@ -48,7 +49,7 @@ async def create_proxy_server(
 
         async def _list_resource_templates(
             _: t.Any,
-        ) -> types.ServerResult:  # noqa: ANN401
+        ) -> types.ServerResult:
             result = await remote_app.list_resource_templates()
             return types.ServerResult(result)
 
@@ -186,7 +187,7 @@ async def create_proxy_server(
     if capabilities.tools:
         logger.debug("Capabilities: adding Tools...")
 
-        async def _list_tools(_: t.Any) -> types.ServerResult:  # noqa: ANN401
+        async def _list_tools(_: t.Any) -> types.ServerResult:
             tools = await remote_app.list_tools()
             return types.ServerResult(tools)
 
@@ -199,7 +200,7 @@ async def create_proxy_server(
                     (req.params.arguments or {}),
                 )
                 return types.ServerResult(result)
-            except Exception as e:  # noqa: BLE001
+            except Exception as e:
                 return types.ServerResult(
                     types.CallToolResult(
                         content=[types.TextContent(type="text", text=str(e))],

@@ -1,13 +1,14 @@
 """Main entry point for MCP OAuth service."""
 
 import argparse
+import logging
 import os
 import sys
-import logging
-import uvicorn
 from importlib.metadata import version
 
-from .server import app, initialize_oauth_config, initialize_mcp_servers_config
+import uvicorn
+
+from .server import app, initialize_mcp_servers_config, initialize_oauth_config
 from .utils.logger import logger
 
 
@@ -91,10 +92,7 @@ def main() -> None:
     args = parser.parse_args()
 
     # Handle debug flag
-    if args.debug:
-        log_level = "debug"
-    else:
-        log_level = args.log_level
+    log_level = "debug" if args.debug else args.log_level
 
     # Override with environment variables if present
     host = os.getenv("HOST", args.host)

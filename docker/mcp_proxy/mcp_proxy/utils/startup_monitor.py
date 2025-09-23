@@ -1,7 +1,6 @@
 """Startup monitoring and reporting for MCP server deployment."""
 
 import time
-from typing import Dict, Optional, Tuple
 from dataclasses import dataclass
 
 from .logger import logger
@@ -13,12 +12,12 @@ class BackendStatus:
 
     name: str
     health_check_passed: bool
-    health_check_error: Optional[str]
+    health_check_error: str | None
     health_check_duration: float
     mitigation_applied: bool
     session_created: bool
-    session_error: Optional[str]
-    session_duration: Optional[float]
+    session_error: str | None
+    session_duration: float | None
     recovery_attempts: int
     final_status: str  # "healthy", "failed", "skipped"
 
@@ -28,8 +27,8 @@ class StartupMonitor:
 
     def __init__(self) -> None:
         self.startup_start_time = time.time()
-        self.backend_statuses: Dict[str, BackendStatus] = {}
-        self.phase_times: Dict[str, float] = {}
+        self.backend_statuses: dict[str, BackendStatus] = {}
+        self.phase_times: dict[str, float] = {}
 
     def start_phase(self, phase_name: str) -> None:
         """Mark the start of a startup phase."""
@@ -46,7 +45,7 @@ class StartupMonitor:
         logger.info("=== PHASE COMPLETE: %s (%.2fs) ===", phase_name, duration)
 
     def record_backend_health_check(
-        self, backend_name: str, passed: bool, error: Optional[str], duration: float
+        self, backend_name: str, passed: bool, error: str | None, duration: float
     ) -> None:
         """Record health check results for a backend."""
         if backend_name not in self.backend_statuses:
@@ -92,8 +91,8 @@ class StartupMonitor:
         self,
         backend_name: str,
         success: bool,
-        error: Optional[str],
-        duration: Optional[float],
+        error: str | None,
+        duration: float | None,
         recovery_attempts: int = 0,
     ) -> None:
         """Record session creation results for a backend."""
@@ -250,7 +249,7 @@ class StartupMonitor:
             else:
                 logger.info("")  # Empty line for spacing
 
-    def should_continue_startup(self) -> Tuple[bool, str]:
+    def should_continue_startup(self) -> tuple[bool, str]:
         """
         Determine if startup should continue based on backend health.
 

@@ -1,24 +1,25 @@
 """OAuth sidecar client for token validation."""
 
 import os
+from typing import NamedTuple
+
 import httpx
-from typing import Optional, NamedTuple
 
 
 class ValidationResult(NamedTuple):
     """Result of token validation from OAuth sidecar."""
 
     is_valid: bool
-    client_id: Optional[str] = None
-    user_email: Optional[str] = None
-    user_name: Optional[str] = None
-    error: Optional[str] = None
+    client_id: str | None = None
+    user_email: str | None = None
+    user_name: str | None = None
+    error: str | None = None
 
 
 class OAuthSidecarClient:
     """Client for communicating with OAuth sidecar service."""
 
-    def __init__(self, oauth_service_url: Optional[str] = None):
+    def __init__(self, oauth_service_url: str | None = None):
         """
         Initialize OAuth sidecar client.
 
@@ -64,16 +65,16 @@ class OAuthSidecarClient:
 
         except httpx.RequestError as e:
             return ValidationResult(
-                is_valid=False, error=f"Failed to connect to OAuth service: {str(e)}"
+                is_valid=False, error=f"Failed to connect to OAuth service: {e!s}"
             )
         except Exception as e:
             return ValidationResult(
-                is_valid=False, error=f"Token validation error: {str(e)}"
+                is_valid=False, error=f"Token validation error: {e!s}"
             )
 
 
 # Global instance
-_oauth_client: Optional[OAuthSidecarClient] = None
+_oauth_client: OAuthSidecarClient | None = None
 
 
 def get_oauth_client() -> OAuthSidecarClient:

@@ -4,20 +4,19 @@ This server aggregates tools, resources, and prompts from multiple backend serve
 and presents them as a unified MCP interface with OAuth authentication.
 """
 
+import asyncio
+import os
+import time
 import typing as t
 from collections.abc import Mapping
-from typing import Optional, Any
-import asyncio
-import time
+from typing import Any
+
 import httpx
-import os
-
 from mcp import server, types
-from mcp.shared.exceptions import McpError
 from mcp.client.session import ClientSession
+from mcp.shared.exceptions import McpError
 
-from ..utils.logger import logger, keepalive_logger
-
+from ..utils.logger import keepalive_logger, logger
 
 # Global store for keep-alive tasks (since we can't modify Server class)
 _global_keep_alive_tasks: list[asyncio.Task[None]] = []
@@ -331,12 +330,12 @@ def set_user_context(user_email: str, access_token: str = "") -> None:
         _current_user_context["access_token"] = access_token
 
 
-def get_user_context() -> Optional[str]:
+def get_user_context() -> str | None:
     """Get the current user email from context."""
     return _current_user_context.get("email")
 
 
-def get_user_access_token() -> Optional[str]:
+def get_user_access_token() -> str | None:
     """Get the current user's access token from context."""
     return _current_user_context.get("access_token")
 
@@ -397,14 +396,16 @@ async def _build_tool_exclusion_cache(
                     for pattern in patterns:
                         should_exclude = False
 
-                        if pattern == tool_name:
-                            should_exclude = True
-                        elif pattern.endswith("*") and tool_name.startswith(
-                            pattern[:-1]
-                        ):
-                            should_exclude = True
-                        elif pattern.startswith("*") and tool_name.endswith(
-                            pattern[1:]
+                        if (
+                            pattern == tool_name
+                            or (
+                                pattern.endswith("*")
+                                and tool_name.startswith(pattern[:-1])
+                            )
+                            or (
+                                pattern.startswith("*")
+                                and tool_name.endswith(pattern[1:])
+                            )
                         ):
                             should_exclude = True
                         elif "*" in pattern:
@@ -512,9 +513,9 @@ async def create_aggregated_proxy_server(
     backend_sessions: Mapping[str, ClientSession],
     backend_params: Mapping[str, Any] | None = None,
     server_name: str = "Qred Aggregated MCP Server",
-    excluded_tools: Optional[dict[str, list[str]]] = None,
-    required_groups: Optional[dict[str, list[str]]] = None,
-    stack: Optional[Any] = None,  # AsyncExitStack for session recovery
+    excluded_tools: dict[str, list[str]] | None = None,
+    required_groups: dict[str, list[str]] | None = None,
+    stack: Any | None = None,  # AsyncExitStack for session recovery
 ) -> server.Server[object]:
     """Create a server instance that aggregates multiple remote MCP servers.
 
@@ -635,7 +636,7 @@ async def create_aggregated_proxy_server(
                     )
                     break  # Success! Exit the retry loop
 
-                except asyncio.TimeoutError:
+                except TimeoutError:
                     if attempt < max_retries:
                         logger.warning(
                             "Backend '%s' initialization timed out after 30 seconds (attempt %d/%d) - retrying...",
@@ -898,8 +899,8 @@ async def _setup_aggregated_tools(
     app: server.Server[object],
     backend_sessions: Mapping[str, ClientSession],
     backend_capabilities: Mapping[str, types.ServerCapabilities],
-    excluded_tools: Optional[dict[str, list[str]]] = None,
-    required_groups: Optional[dict[str, list[str]]] = None,
+    excluded_tools: dict[str, list[str]] | None = None,
+    required_groups: dict[str, list[str]] | None = None,
 ) -> None:
     """Set up aggregated tool handlers with optional tool filtering and group-based access control.
 
@@ -922,7 +923,7 @@ async def _setup_aggregated_tools(
         """Check if a tool should be excluded based on pre-computed cache."""
         return tool_name in _excluded_tools_cache.get(backend_name, set())
 
-    async def _list_tools(_: t.Any) -> types.ServerResult:  # noqa: ANN401
+    async def _list_tools(_: t.Any) -> types.ServerResult:
         """List all tools from all backends with namespaced names."""
         all_tools = []
 
@@ -1081,7 +1082,7 @@ async def _setup_aggregated_tools(
             user_email = get_user_context()
 
             # Define backends that require automatic user injection
-            BACKENDS_REQUIRING_USER = {
+            backends_requiring_user = {
                 "postgres": True,  # Always override user parameter (security critical)
                 "grafana": False,  # Only inject if not present
                 "posthog": False,  # Only inject if not present
@@ -1090,7 +1091,7 @@ async def _setup_aggregated_tools(
 
             # Inject user parameter based on backend configuration
             if user_email:
-                should_override = BACKENDS_REQUIRING_USER.get(backend_name, False)
+                should_override = backends_requiring_user.get(backend_name, False)
 
                 if should_override or "user" not in arguments:
                     arguments["user"] = user_email
@@ -1108,7 +1109,7 @@ async def _setup_aggregated_tools(
                         backend_name,
                         actual_tool_name,
                     )
-            elif not user_email and backend_name in BACKENDS_REQUIRING_USER:
+            elif not user_email and backend_name in backends_requiring_user:
                 logger.warning(
                     "No authenticated user context available for backend '%s' that requires user injection",
                     backend_name,
@@ -1125,7 +1126,7 @@ async def _setup_aggregated_tools(
                         k: v for k, v in arguments.items() if k != "user"
                     },  # Don't log sensitive user info
                     "injected_user": user_email is not None,
-                    "user_override": BACKENDS_REQUIRING_USER.get(backend_name, False),
+                    "user_override": backends_requiring_user.get(backend_name, False),
                 },
             )
 
@@ -1160,7 +1161,7 @@ async def _setup_aggregated_resources(
     app: server.Server[object],
     backend_sessions: Mapping[str, ClientSession],
     backend_capabilities: Mapping[str, types.ServerCapabilities],
-    required_groups: Optional[dict[str, list[str]]] = None,
+    required_groups: dict[str, list[str]] | None = None,
 ) -> None:
     """Set up aggregated resource handlers with optional group-based access control.
 
@@ -1172,7 +1173,7 @@ async def _setup_aggregated_resources(
     """
     required_groups = required_groups or {}
 
-    async def _list_resources(_: t.Any) -> types.ServerResult:  # noqa: ANN401
+    async def _list_resources(_: t.Any) -> types.ServerResult:
         """List all resources from all backends with namespaced URIs."""
         all_resources = []
 
@@ -1329,7 +1330,7 @@ async def _setup_aggregated_prompts(
     app: server.Server[object],
     backend_sessions: Mapping[str, ClientSession],
     backend_capabilities: Mapping[str, types.ServerCapabilities],
-    required_groups: Optional[dict[str, list[str]]] = None,
+    required_groups: dict[str, list[str]] | None = None,
 ) -> None:
     """Set up aggregated prompt handlers with optional group-based access control.
 
@@ -1341,7 +1342,7 @@ async def _setup_aggregated_prompts(
     """
     required_groups = required_groups or {}
 
-    async def _list_prompts(_: t.Any) -> types.ServerResult:  # noqa: ANN401
+    async def _list_prompts(_: t.Any) -> types.ServerResult:
         """List all prompts from all backends with namespaced names."""
         all_prompts = []
 
