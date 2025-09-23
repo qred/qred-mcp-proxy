@@ -66,7 +66,7 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "All pre-commit hooks have passed successfully! ✅" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Configuration**: Uses `.pre-commit-config.yaml` (same as local development)" >> $GITHUB_STEP_SUMMARY
+          echo "**Configuration**: Uses \`.pre-commit-config.yaml\` (same as local development)" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Hook | Purpose | Status |" >> $GITHUB_STEP_SUMMARY
           echo "|------|---------|--------|" >> $GITHUB_STEP_SUMMARY
