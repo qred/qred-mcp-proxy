@@ -15,6 +15,8 @@ A production-ready MCP (Model Context Protocol) proxy system with enterprise-gra
 
 ## Architecture Overview
 
+![MCP OAuth Architecture](assets/qred-mcp-servers-oauth.png)
+
 The system consists of three main components that work together to provide a secure, scalable MCP proxy solution:
 
 ### 1. **MCP Proxy Service** (`docker/mcp_proxy/`)
@@ -45,7 +47,7 @@ The MCP Proxy system is designed to solve a fundamental challenge: **enabling se
 
 **Core Problems Addressed**:
 
-1. **Enterprise Authentication Gap**: Most MCP implementations lack robust authentication mechanisms suitable for enterprise environments
+1. **Enterprise Authentication Gap**: Many MCP implementations lack robust authentication mechanisms suitable for enterprise environments
 2. **Client Heterogeneity**: Different MCP clients (Claude Code, VS Code extensions, desktop applications) have varying OAuth capabilities and limitations
 3. **Security at Scale**: Need for centralized authentication, logging, and access control across multiple backend services
 4. **Developer Experience**: Simplifying the complexity of OAuth flows while maintaining security standards
@@ -61,8 +63,8 @@ The OAuth sidecar serves as a **compatibility and security bridge** between dive
 Many MCP clients have fundamental limitations when working with standard OAuth flows:
 
 - **Missing scope headers**: Some clients don't properly send OAuth scope parameters, causing identity provider authentication to fail
-- **Dynamic port mappings for callbacks**: Clients use randomized port mappings for localhost callbacks, requiring all possible localhost ports to be pre-registered (security risk)
-- **Inconsistent OAuth support**: Some clients require Dynamic Client Registration (DCR), but many OAuth providers (like Google) don't support this for security reasons
+- **Dynamic port mappings for callbacks**: Clients use randomized port mappings for localhost callbacks, requiring all possible localhost ports to be pre-registered in the oauth provider (security risk)
+- **Inconsistent OAuth support**: Some clients require Dynamic Client Registration (DCR), but many OAuth providers (like Google) don't support this out of the box for security reasons
 - **Transport protocol variations**: Different clients prefer different transport mechanisms (HTTP vs STDIO)
 
 #### 2. **Enterprise Security Requirements**
@@ -288,7 +290,7 @@ Set up Workload Identity Federation for secure authentication from AWS:
 ### 2. AWS Infrastructure Prerequisites
 
 #### VPC Configuration
-- **Existing VPC** with public and private subnets
+- **Existing VPC** with public (if using external loadbalancer) and private subnets
 - **Internet Gateway** attached to public subnets
 - **NAT Gateway** or NAT Instance for private subnet internet access
 - **Route tables** properly configured for public/private routing
@@ -403,7 +405,7 @@ Ensure your AWS credentials have permissions for:
 ### 5. Development Tools
 - **Node.js** (v18 or later) and npm
 - **AWS CLI** configured with appropriate credentials
-- **AWS CDK** installed globally: `npm install -g aws-cdk`
+- **AWS CDK** installed
 - **Docker** (for local development and image building)
 - **Google Cloud SDK** (for GCP setup, it can be configured in console)
 
@@ -412,7 +414,7 @@ Ensure your AWS credentials have permissions for:
 ### Prerequisites
 - AWS account with appropriate permissions
 - Node.js and npm
-- AWS CDK installed (`npm install -g aws-cdk`)
+- AWS CDK installed (eg installed globaly `npm install -g aws-cdk`)
 - Docker (for local development)
 
 ### 1. Configure Infrastructure
@@ -444,14 +446,14 @@ The CDK deploys several AWS resources:
 After infrastructure is deployed, the containerized services will be automatically deployed via ECS.
 
 ### 3. Configure Client
-Once deployed, configure your MCP client to use OAuth discovery:
+Once deployed, configure your MCP client to use http:
 
 ```json
 {
   "servers": {
     "mcp-proxy": {
       "url": "https://your-mcp-proxy-url/mcp",
-      "oauth_discovery": true
+      "type": "http"
     }
   }
 }
@@ -576,4 +578,4 @@ Each environment can have its own VPC, certificates, secrets, and service naming
 
 ## License
 
-This project is available under standard open source licensing terms.
+This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
