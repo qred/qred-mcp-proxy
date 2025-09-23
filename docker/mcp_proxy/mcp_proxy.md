@@ -1,13 +1,13 @@
 # MCP Proxy Container: Aggregated MCP Server with OAuth 2.1 Discovery
 
-The `mcp_proxy` container provides an aggregated proxy server for the Model Context Protocol (MCP) with OAuth 2.1 discovery and Google Workspace authentication. It combines multiple backend MCP servers into a single unified interface, providing comprehensive user activity logging and secure access control.
+The `mcp_proxy` container provides an aggregated proxy server for the Model Context Protocol (MCP) with OAuth 2.1 discovery and Google Workspace authentication. It combines multiple backend MCP servers into a single unified interface, providing comprehensive activity logging and secure access control.
 
 ## Features
 
 - **Aggregated MCP Server**: Combines multiple backend MCP servers into a single unified interface
 - **OAuth 2.1 Discovery Support**: RFC 9728 and RFC 8414 compliant discovery endpoints for automatic client configuration
 - **OAuth Bearer Token Authentication**: OAuth2 tokens validated against Google Workspace via userinfo endpoint
-- **Structured Activity Logging**: Dedicated authentication logs (`auth.log`) and application logs with user context
+- **Structured Logging**: Dedicated authentication logs (`auth.log`) and application logs with user context
 - **Clean URL Structure**: Supports both `/mcp` and `/mcp/` endpoints via middleware
 - **Cached Token Validation**: 5-minute TTL cache to reduce authentication overhead
 - **Tool Namespacing**: Backend tools are namespaced by their server name for isolation
@@ -56,7 +56,7 @@ Provides comprehensive setup guidance for OAuth discovery-enabled MCP clients wi
 
 **What Happens:**
 1. Client discovers OAuth endpoints automatically from well-known URLs
-2. Client prompts user for Google OAuth client_id and client_secret  
+2. Client redirects user to Google's authentication page for login
 3. Client performs standard OAuth 2.0/OpenID Connect flow
 4. Client uses Bearer token for all MCP requests
 
@@ -94,7 +94,7 @@ Content-Type: application/json
 
 ## MCP Server Architecture
 The proxy server aggregates tools, resources, and prompts from configured backend servers:
-- **Tool Calls**: Routed to appropriate backends with user activity logging
+- **Tool Calls**: Routed to appropriate backends with comprehensive logging
 - **Resource Access**: Namespaced URIs for backend resource isolation  
 - **Prompt Management**: Unified prompt interface across backends
 - **Authentication**: OAuth2 Bearer token validation with Google Workspace membership verification
@@ -334,7 +334,7 @@ The middleware automatically handles both `/mcp` and `/mcp/` paths - no manual r
 ## Development Notes
 
 - **Stateless Design**: Each request is independently authenticated and routed
-- **User Context**: Thread-local user context enables activity logging across the request lifecycle  
+- **User Context**: Thread-local user context enables comprehensive logging across the request lifecycle  
 - **Caching Strategy**: OAuth token validation cached for 5 minutes to reduce authentication overhead
 - **Error Handling**: Comprehensive error logging with user context for debugging
 

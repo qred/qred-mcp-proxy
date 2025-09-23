@@ -352,11 +352,11 @@ async def _refresh_groups_and_users(google_wif_config, is_initial: bool = False,
         
         # User refresh logic - refresh the user cache to keep workspace user data current
         if refresh_users:
-            logger.info("🔄 REFRESH: Attempting to refresh user cache for org unit: /People")
+            logger.info("🔄 REFRESH: Attempting to refresh user cache for default org unit")
             try:
                 # Call the Google WIF user refresh method
                 # This will refresh the google_users cache with current workspace users
-                google_wif_config.refresh_users('/People')
+                google_wif_config.refresh_users()  # Uses default org unit path from config
                 logger.info("✅ REFRESH: Successfully refreshed user cache")
                 # Users are refreshed as a whole org unit, so count as 1 successful operation
                 success_count += 1
@@ -571,7 +571,7 @@ async def refresh_status():
         "total_groups": len(_required_groups),
         "description": "Groups and users refresh independently at their own intervals",
         "user_refresh_enabled": True,  # Now we actually refresh users
-        "user_org_unit": "/People"  # The org unit we refresh users for
+        "user_org_unit": os.getenv('GOOGLE_ORG_UNIT_PATH', '/')  # The org unit we refresh users for
     }
     
     # Add task status if available
@@ -1306,14 +1306,12 @@ async def validate_user_with_groups(request: Request):
             validation_result = await google_wif_config.validate_oauth_token_with_groups(
                 access_token=token,
                 required_groups=None,  # Don't require groups, just check membership
-                org_unit_path='/People',
                 expected_client_id=expected_client_id
             )
         else:
             # Standard validation without group checking
             validation_result = await google_wif_config.validate_oauth_token(
                 access_token=token,
-                org_unit_path='/People',
                 expected_client_id=expected_client_id
             )
         

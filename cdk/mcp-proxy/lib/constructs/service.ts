@@ -87,7 +87,7 @@ EOF
       OAUTH_SERVICE_URL: 'http://127.0.0.1:8001',
       FORCE_HTTPS_DOMAINS: stackProps.forceHttpsDomains || '',
     } satisfies ecs.ContainerDefinitionOptions['environment'],
-    command: ["--pass-environment", "--port", "8096", "--host", "0.0.0.0", "--named-server-config", "/app/config-sync/servers.json", "--aggregated", "--google-auth-required"]
+    command: ["--pass-environment", "--port", "8096", "--host", "0.0.0.0", "--named-server-config", "/app/config-sync/servers.json", "--google-auth-required"]
   });
 
   // Only add Grafana container if grafana secret is provided
@@ -126,8 +126,10 @@ EOF
     },
     environment: {
       SA_EMAIL: stackProps.saEmail,
-      GOOGLE_WORKSPACE_DOMAIN: stackProps.googleWorkspaceDomain || '',
-      GOOGLE_ADMIN_EMAIL: stackProps.googleAdminEmail || '',
+      GOOGLE_WORKSPACE_DOMAIN: stackProps.googleWorkspaceDomain,
+      GOOGLE_ADMIN_EMAIL: stackProps.googleAdminEmail,
+      GOOGLE_CUSTOMER_ID: stackProps.googleCustomerId,
+      GOOGLE_ORG_UNIT_PATH: stackProps.googleOrgUnitPath,
       FORCE_HTTPS_DOMAINS: stackProps.forceHttpsDomains || '',
     } satisfies ecs.ContainerDefinitionOptions['environment'],
     command: ["--host", "0.0.0.0", "--port", "8001"],

@@ -91,6 +91,8 @@
         "saEmail": "example@yourproject.iam.gserviceaccount.com",
         "googleWorkspaceDomain": "yourcompany.com",
         "googleAdminEmail": "admin@yourcompany.com",
+        "googleCustomerId": "my_customer",
+        "googleOrgUnitPath": "/",
         "forceHttpsDomains": "yourapp.yourcompany.com,api.yourcompany.com",
         "internalNetworks": ["10.0.0.0/16"]
       }

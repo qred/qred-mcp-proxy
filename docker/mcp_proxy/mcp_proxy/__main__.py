@@ -2,7 +2,7 @@
 
 Two ways to run the application:
 1. Run the application as a module `uv run -m mcp_proxy`
-2. Run the application as a package `uv run mcp-proxy`
+2. Run the application directly with `mcp-proxy`
 
 """
 
@@ -19,8 +19,6 @@ from mcp.client.stdio import StdioServerParameters
 
 from .utils.config_loader import load_named_server_configs_from_file, ServerParameters
 from .server.mcp_server import MCPServerSettings, run_mcp_server
-from .server.sse_client import run_sse_client
-from .server.streamablehttp_client import run_streamablehttp_client
 from .utils.logger import logger, set_debug_mode
 
 # Deprecated env var. Here for backwards compatibility.
@@ -33,16 +31,15 @@ SSE_URL: t.Final[str | None] = os.getenv(
 def _setup_argument_parser() -> argparse.ArgumentParser:
     """Set up and return the argument parser for the MCP proxy."""
     parser = argparse.ArgumentParser(
-        description=("Start the MCP proxy in one of two possible modes: as a client or a server."),
+        description=("Start the MCP proxy server with aggregated backend support and OAuth 2.1 authentication."),
         epilog=(
             "Examples:\n"
-            "  mcp-proxy http://localhost:8080/sse\n"
-            "  mcp-proxy --transport streamablehttp http://localhost:8080/mcp\n"
-            "  mcp-proxy --headers Authorization 'Bearer YOUR_TOKEN' http://localhost:8080/sse\n"
-            "  mcp-proxy --port 8080 -- your-command --arg1 value1 --arg2 value2\n"
+            "  mcp-proxy --named-server-config config/servers.json --port 8080 --google-auth-required\n"
             "  mcp-proxy --named-server fetch 'uvx mcp-server-fetch' --port 8080\n"
-            "  mcp-proxy your-command --port 8080 -e KEY VALUE -e ANOTHER_KEY ANOTHER_VALUE\n"
+            "  mcp-proxy --named-server posthog 'mcp-remote http://posthog:8000' --port 8080\n"
+            "  mcp-proxy your-command --port 8080 -e KEY VALUE\n"
             "  mcp-proxy your-command --port 8080 --allow-origin='*'\n"
+            "  mcp-proxy --no-aggregated your-command --port 8080  # Use legacy single-backend mode\n"
         ),
         formatter_class=argparse.RawTextHelpFormatter,
     )
@@ -210,30 +207,19 @@ def _add_arguments_to_parser(parser: argparse.ArgumentParser) -> None:
     mcp_server_group.add_argument(
         "--aggregated",
         action=argparse.BooleanOptionalAction,
-        help="Run in aggregated mode (single server with all tools). Default is False",
-        default=False,
+        help="Run in aggregated mode (single server with all tools). Default is True",
+        default=True,
     )
 
 
 def _handle_sse_client_mode(
     args_parsed: argparse.Namespace,
 ) -> None:
-    """Handle SSE/StreamableHTTP client mode operation."""
-    if args_parsed.named_server_definitions:
-        logger.warning(
-            "--named-server arguments are ignored when command_or_url is an HTTP/HTTPS URL "
-            "(SSE/StreamableHTTP client mode).",
-        )
-    # Start a client connected to the SSE server, and expose as a stdio server
-    logger.debug("Starting SSE/StreamableHTTP client and stdio server")
-    headers = dict(args_parsed.headers)
-    if api_access_token := os.getenv("API_ACCESS_TOKEN", None):
-        headers["Authorization"] = f"Bearer {api_access_token}"
-
-    if args_parsed.transport == "streamablehttp":
-        asyncio.run(run_streamablehttp_client(args_parsed.command_or_url, headers=headers))
-    else:
-        asyncio.run(run_sse_client(args_parsed.command_or_url, headers=headers))
+    """Handle SSE/StreamableHTTP client mode - removed in this version."""
+    logger.error("SSE/StreamableHTTP client mode has been removed in this version.")
+    logger.error("This version focuses on aggregated server mode for better enterprise deployment.")
+    logger.error("To run in server mode, remove the URL argument and use --named-server-config or --named-server arguments with --no-aggregated flag.")
+    sys.exit(1)
 
 
 def _configure_default_server(

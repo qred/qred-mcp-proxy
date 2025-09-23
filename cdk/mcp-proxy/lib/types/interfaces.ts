@@ -23,8 +23,10 @@ export interface McpProxyProps extends cdk.StackProps {
   openmetadataSecretArn?: string;   // Optional - if provided, enables OpenMetadata MCP server
   posthogSecretArn?: string;        // Optional - if provided, enables PostHog MCP server
   saEmail: string;                  // Service Account email for Google authentication
-  googleWorkspaceDomain?: string;   // Google Workspace domain for OAuth (e.g., "company.com")
-  googleAdminEmail?: string;        // Google Workspace admin email for WIF service
+  googleWorkspaceDomain: string;    // Google Workspace domain for OAuth (e.g., "company.com")
+  googleAdminEmail: string;         // Google Workspace admin email for WIF service
+  googleCustomerId: string;         // Google Workspace customer ID for Directory API (e.g., "CXXXXXXXXX")
+  googleOrgUnitPath: string;        // Google Workspace organizational unit path for user search (e.g., "/")
   forceHttpsDomains?: string;       // Comma-separated domains that should force HTTPS behind load balancer
   grafanaUrl?: string;              // Grafana instance URL for MCP server (required if grafanaSecretArn is provided)
   desiredCount: number;

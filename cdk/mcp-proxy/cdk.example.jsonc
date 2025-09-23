@@ -12,9 +12,13 @@
   //    - If dns section is omitted or incomplete, no DNS records will be created
   //    - This is useful for external DNS management or when using existing load balancers
   //
-  // 2. Google Workspace Configuration:
+  // 2. Google Workspace Configuration (REQUIRED):
   //    - googleWorkspaceDomain: Your organization's Google Workspace domain (e.g., "yourcompany.com")
-  //    - googleAdminEmail: Admin email for Google Workspace Identity Federation
+  //    - googleAdminEmail: Admin email for Google Workspace Identity Federation (REQUIRED)
+  //    - googleCustomerId: Your Google Workspace customer ID from Admin Console (REQUIRED - find in Admin Console > Account > Profile)
+  //      Format: "CXXXXXXXXX" where X are alphanumeric characters
+  //      Alternative: Use "my_customer" for your primary domain
+  //    - googleOrgUnitPath: Organizational unit for user searches (REQUIRED - "/" for all users, "/Department" for specific OU)
   //    - forceHttpsDomains: Comma-separated list of domains that should force HTTPS behind load balancers
   //    - These can also be set via environment variables: GOOGLE_WORKSPACE_DOMAIN, GOOGLE_ADMIN_EMAIL, FORCE_HTTPS_DOMAINS
   //
@@ -101,8 +105,10 @@
         "region": "eu-west-1",                // AWS region
         "desiredCount": 1,                    // Number of ECS tasks to run
         "saEmail": "your-sa@your-gcp-project.iam.gserviceaccount.com",  // Google Service Account email for authentication
-        "googleWorkspaceDomain": "yourcompany.com",                     // Google Workspace domain for OAuth (replaces hardcoded domains)
-        "googleAdminEmail": "admin@yourcompany.com",                    // Google Workspace admin email for WIF service
+        "googleWorkspaceDomain": "yourcompany.com",                     // Google Workspace domain for OAuth (REQUIRED)
+        "googleAdminEmail": "admin@yourcompany.com",                    // Google Workspace admin email for WIF service (REQUIRED)
+        "googleCustomerId": "CXXXXXXXXX",                                // Google Workspace customer ID for Directory API (REQUIRED - get from Google Admin Console)
+        "googleOrgUnitPath": "/",                                       // Google Workspace organizational unit path for user searches (REQUIRED - "/" for all users)
         "forceHttpsDomains": "yourapp.yourcompany.com,api.yourcompany.com", // Comma-separated domains that force HTTPS behind load balancer
         "grafanaUrl": "https://your-grafana.url",                       // Grafana instance URL (required only if grafanaSecretArn is provided)
         "enableExternalLoadBalancer": false,                            // Enable internet-facing load balancer for AI providers (optional, default: false)
@@ -197,8 +203,10 @@
         "region": "eu-west-1",
         "desiredCount": 2,                    // More instances for production
         "saEmail": "prod-sa@your-gcp-project.iam.gserviceaccount.com",   // Production Service Account email
-        "googleWorkspaceDomain": "yourcompany.com",                     // Google Workspace domain for OAuth
-        "googleAdminEmail": "admin@yourcompany.com",                    // Google Workspace admin email for WIF service  
+        "googleWorkspaceDomain": "yourcompany.com",                     // Google Workspace domain for OAuth (REQUIRED)
+        "googleAdminEmail": "admin@yourcompany.com",                    // Google Workspace admin email for WIF service (REQUIRED)
+        "googleCustomerId": "CXXXXXXXXX",                                // Google Workspace customer ID for Directory API (REQUIRED)
+        "googleOrgUnitPath": "/Employees",                              // Different org unit path for production users (REQUIRED)
         "forceHttpsDomains": "prod-api.yourcompany.com,mcp.yourcompany.com", // Production domains that force HTTPS
         "grafanaUrl": "https://your-production-grafana.url",              // Production Grafana instance URL
         "internalNetworks": ["10.1.0.0/16"],                           // Production VPC CIDR - more restrictive than default

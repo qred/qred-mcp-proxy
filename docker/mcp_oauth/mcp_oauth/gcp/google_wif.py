@@ -93,6 +93,12 @@ class GoogleWIF:
         # This should be a service account with admin privileges
         self.impersonation_email: str = os.getenv('GOOGLE_ADMIN_EMAIL', 'admin@your-domain.com')
         
+        # Google Workspace customer ID for Directory API calls
+        self.google_customer_id: str = os.getenv('GOOGLE_CUSTOMER_ID', 'my_customer')
+        
+        # Default organizational unit path for user searches
+        self.default_org_unit_path: str = os.getenv('GOOGLE_ORG_UNIT_PATH', '/')
+        
         self.target_scopes: List[str] = [
             "https://www.googleapis.com/auth/admin.directory.user.readonly",
             "https://www.googleapis.com/auth/admin.directory.group.readonly"
@@ -115,7 +121,7 @@ class GoogleWIF:
         # Build the users and groups lookup dictionaries at startup
         # Note: Users are loaded immediately, but groups are only initialized empty
         # The server startup process will populate groups before accepting requests
-        self.__get_users()
+        self.__get_users(self.default_org_unit_path)
         self.__initialize_groups()
 
     def _get_refreshable_aws_session(self) -> boto3.Session:
@@ -336,14 +342,18 @@ class GoogleWIF:
         self.admin_service = build('admin', 'directory_v1', credentials=self.credentials, cache_discovery=False)
         logger.info('Built admin service')
     
-    def __get_users(self, org_unit_path: str = '/People') -> None:
+    def __get_users(self, org_unit_path: Optional[str] = None) -> None:
         """
         This function fetches all users' information at once.
         Implements a timeout mechanism to avoid excessive API calls.
 
         Args:
-            org_unit_path: The organizational unit path to fetch users from
+            org_unit_path: The organizational unit path to fetch users from. If None, uses default.
         """
+        # Use default org unit path if none provided
+        if org_unit_path is None:
+            org_unit_path = self.default_org_unit_path
+            
         # Check if we've refreshed users for this org_unit_path recently
         now = datetime.now(timezone.utc)
         last_refresh = self.last_users_refresh.get(org_unit_path)
@@ -368,7 +378,7 @@ class GoogleWIF:
             while True:
                 # Use type: ignore for Google API dynamic attributes
                 user_response = self.admin_service.users().list(  # type: ignore[attr-defined]
-                    customer='C03fqgh2d',
+                    customer=self.google_customer_id,
                     projection='basic',
                     query=f"orgUnitPath='{org_unit_path}'",
                     viewType='admin_view',
@@ -430,14 +440,17 @@ class GoogleWIF:
             logger.warning(f"Failed to load groups: {e}")
             # Don't fail if group refresh fails
     
-    def refresh_users(self, org_unit_path: str = '/People') -> None:
+    def refresh_users(self, org_unit_path: Optional[str] = None) -> None:
         """
         Refresh user data for the specified organizational unit.
         This can be called during startup or for periodic refreshes.
         
         Args:
-            org_unit_path: The organizational unit path to refresh users from
+            org_unit_path: The organizational unit path to refresh users from. If None, uses default.
         """
+        if org_unit_path is None:
+            org_unit_path = self.default_org_unit_path
+            
         logger.info(f"Refreshing users for org unit: {org_unit_path}")
         try:
             # Force a refresh by clearing the last refresh timestamp
@@ -452,8 +465,12 @@ class GoogleWIF:
             # Don't fail if user refresh fails
     
     
-    async def __get_user(self, user_identifier: str, org_unit_path: str = '/People') -> UserInfo:
+    async def __get_user(self, user_identifier: str, org_unit_path: Optional[str] = None) -> UserInfo:
         """Get a specific user from Google Workspace with intelligent caching."""
+        # Use default org unit path if none provided
+        if org_unit_path is None:
+            org_unit_path = self.default_org_unit_path
+            
         user: Dict[str, Any] = {}
         is_valid = False
         
@@ -737,7 +754,7 @@ class GoogleWIF:
         access_token: str, 
         required_groups: Optional[List[str]] = None,
         require_all_groups: bool = False,
-        org_unit_path: str = '/People', 
+        org_unit_path: Optional[str] = None, 
         expected_client_id: Optional[str] = None
     ) -> ValidationResult:
         """
@@ -747,12 +764,16 @@ class GoogleWIF:
             access_token: OAuth access token to validate
             required_groups: List of groups the user must belong to (optional)
             require_all_groups: If True, user must belong to ALL groups. If False, user must belong to at least ONE group
-            org_unit_path: Google Workspace organizational unit path
+            org_unit_path: Google Workspace organizational unit path. If None, uses default.
             expected_client_id: Expected OAuth client ID for validation
             
         Returns:
             ValidationResult with user info and validation status
         """
+        # Use default org unit path if none provided
+        if org_unit_path is None:
+            org_unit_path = self.default_org_unit_path
+            
         # First, perform standard OAuth and workspace validation
         standard_validation = await self.validate_oauth_token(access_token, org_unit_path, expected_client_id)
         
@@ -815,8 +836,12 @@ class GoogleWIF:
                 error_description=f"Failed to validate group membership: {str(e)}"
             )
 
-    async def validate_oauth_token(self, access_token: str, org_unit_path: str = '/People', expected_client_id: Optional[str] = None) -> ValidationResult:
+    async def validate_oauth_token(self, access_token: str, org_unit_path: Optional[str] = None, expected_client_id: Optional[str] = None) -> ValidationResult:
         """Validate Google OAuth access token and check if user is in workspace."""
+        
+        # Use default org unit path if none provided
+        if org_unit_path is None:
+            org_unit_path = self.default_org_unit_path
         
         # First, validate the token with Google
         user_info: Optional[Dict[str, Any]] = None
@@ -892,5 +917,31 @@ class GoogleWIF:
         )
 
 
-# Global WIF instance
-google_wif_config = GoogleWIF()
+# Global instance - initialized lazily
+_google_wif_config = None
+
+def get_google_wif_config():
+    """Get the global GoogleWIF instance, creating it if necessary."""
+    global _google_wif_config
+    if _google_wif_config is None:
+        _google_wif_config = GoogleWIF()
+    return _google_wif_config
+
+class _LazyGoogleWIFConfig:
+    """Lazy loader for GoogleWIF configuration that only initializes when accessed."""
+    
+    def __init__(self):
+        self._instance = None
+    
+    def __getattr__(self, name):
+        """Lazy load the GoogleWIF instance when any attribute is accessed."""
+        if self._instance is None:
+            self._instance = GoogleWIF()
+        return getattr(self._instance, name)
+    
+    def __bool__(self):
+        """Return True to indicate the config object exists."""
+        return True
+
+# For backward compatibility - this will be initialized on first access
+google_wif_config = _LazyGoogleWIFConfig()

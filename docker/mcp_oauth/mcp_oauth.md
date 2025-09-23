@@ -1,42 +1,37 @@
 # MCP OAuth 2.1 Sidecar Service
 
-An OAuth 2.1 sidecar service for MCP (Model Context Protocol) servers with client-specific routing and Dynamic Client Registration support.
+An OAuth 2.1 sidecar service for MCP (Model Context Protocol) servers with unified authentication flow and Dynamic Client Registration support.
 
 ## Features
 
-- **Client-Specific Routing**: Automatically detects client type and provides optimized OAuth endpoints
-- **OAuth 2.1 Discovery**: RFC 8414 compliant authorization server metadata discovery
 - **Dynamic Client Registration**: RFC 7591 compliant automatic client credential provisioning
+- **OAuth 2.1 Discovery**: RFC 8414 compliant authorization server metadata discovery
+- **Unified Authentication Flow**: All MCP clients follow the same OAuth flow
 - **OAuth Proxy**: Fixes common OAuth implementation issues in MCP clients
 - **Google Workspace Integration**: Enterprise-grade authentication with workspace validation
-- **Callback Forwarding**: Handles localhost callbacks for Claude Code and desktop clients
+- **Callback Forwarding**: Handles localhost callbacks for desktop and CLI clients
 - **Token Management**: Ensures refresh tokens are properly issued and managed
 
 ## Architecture
 
 This service acts as an intelligent OAuth sidecar that:
 
-1. **Detects Client Type** based on User-Agent headers and DCR client names
-2. **Routes Endpoints** - Claude Code gets proxy endpoints, others get direct Google OAuth
+1. **Provides Dynamic Client Registration** for all MCP clients automatically
+2. **Unified OAuth Endpoints** - All clients use the same authentication flow
 3. **Handles DCR requests** from MCP clients (Claude Code, VS Code, etc.)
-4. **Proxies authorization requests** to fix missing scopes and parameters (Claude Code only)
+4. **Processes authorization requests** with proper scopes and parameters
 5. **Forwards OAuth callbacks** using browser redirects for localhost clients
-6. **Proxies token exchange** to inject missing client credentials (Claude Code only)
-7. **Fixes response formatting** to ensure client compatibility
+6. **Manages token exchange** with client credentials from DCR
+7. **Ensures response compatibility** for all client types
 
-### Client-Specific Behavior
+### Authentication Flow
 
-#### Claude Code Clients
-- **Detection**: User-Agent contains `"Claude Code"` and client identification patterns
-- **Endpoints**: Proxy endpoints (`/oauth/auth`, `/oauth/token`)
-- **Behavior**: Full OAuth proxy with localhost callback forwarding
-- **Reason**: Claude Code has OAuth implementation issues requiring proxy intervention
+All MCP clients follow the same unified authentication flow:
 
-#### Standard MCP Clients
-- **Detection**: All other clients (VS Code, Claude Web/Desktop, etc.)
-- **Endpoints**: Direct Google OAuth endpoints
-- **Behavior**: Direct communication with Google OAuth for optimal performance
-- **Reason**: These clients have proper OAuth implementations
+1. **Client Registration**: Automatic DCR provides OAuth credentials
+2. **Authorization**: Standard OAuth 2.0/OpenID Connect flow with Google
+3. **Token Exchange**: Secure token handling with proper validation
+4. **Callback Handling**: Browser redirects for localhost-based clients
 
 ## Environment Variables
 
@@ -94,9 +89,9 @@ uv run mcp-oauth --log-level debug
 
 ## Client Configuration
 
-MCP clients should use OAuth discovery to automatically find endpoints. The OAuth sidecar provides client-specific endpoints based on automatic detection:
+MCP clients should use OAuth discovery to automatically find endpoints. The OAuth sidecar provides unified endpoints for all client types:
 
-### For Claude Code
+### For All MCP Clients
 ```json
 {
   "server_url": "http://your-mcp-server/mcp",
@@ -104,22 +99,12 @@ MCP clients should use OAuth discovery to automatically find endpoints. The OAut
   "oauth_issuer": "https://accounts.google.com"
 }
 ```
-Will receive proxy endpoints for localhost callback handling.
 
-### For VS Code/Claude Web/Desktop
-```json
-{
-  "server_url": "http://your-mcp-server/mcp", 
-  "oauth_discovery": true,
-  "oauth_issuer": "https://accounts.google.com"
-}
-```
-Will receive direct Google OAuth endpoints for optimal performance.
+All clients receive the same OAuth endpoints and follow the unified authentication flow with automatic Dynamic Client Registration.
 
 The OAuth service will be discovered at: `http://your-oauth-service:8080`
 
 ## Documentation
 
-- **[Client-Specific OAuth Routing](../../docs-assets/Client-Specific-OAuth-Routing.md)**: Detailed routing implementation
 - **[OAuth 2.1 DCR Implementation](../../docs-assets/OAuth-2.1-DCR-Implementation.md)**: Dynamic Client Registration details
 - **[OAuth 2.1 Discovery Setup](../../docs-assets/OAuth-2.1-Discovery-Setup.md)**: Complete setup guide

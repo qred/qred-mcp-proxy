@@ -57,9 +57,12 @@ new MCPProxyStack(app, envConfig.serviceName, {
   ...(envConfig.secrets.openmetadataSecretArn && { openmetadataSecretArn: envConfig.secrets.openmetadataSecretArn }),
   ...(envConfig.secrets.posthogSecretArn && { posthogSecretArn: envConfig.secrets.posthogSecretArn }),
   saEmail: envConfig.saEmail,
-  // Environment-specific configuration
+  // Required Google Workspace configuration
   googleWorkspaceDomain: process.env.GOOGLE_WORKSPACE_DOMAIN || envConfig.googleWorkspaceDomain,
   googleAdminEmail: process.env.GOOGLE_ADMIN_EMAIL || envConfig.googleAdminEmail,
+  googleCustomerId: process.env.GOOGLE_CUSTOMER_ID || envConfig.googleCustomerId,
+  googleOrgUnitPath: process.env.GOOGLE_ORG_UNIT_PATH || envConfig.googleOrgUnitPath,
+  // Optional configuration
   forceHttpsDomains: process.env.FORCE_HTTPS_DOMAINS || envConfig.forceHttpsDomains,
   ...(envConfig.grafanaUrl && { grafanaUrl: envConfig.grafanaUrl }),
   desiredCount: envConfig.desiredCount,

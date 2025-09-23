@@ -8,6 +8,11 @@ A production-ready MCP (Model Context Protocol) proxy system with enterprise-gra
 
 **What is this solution?** The MCP Proxy bridges the gap between enterprise security requirements and the diverse landscape of MCP clients. It provides a unified, secure gateway that enables any MCP client to authenticate against Google Workspace and access multiple backend services through a single endpoint, regardless of the client's OAuth capabilities or limitations.
 
+**Key Enterprise Benefits:**
+- **Unified Adoption Experience**: Single endpoint configuration eliminates the need for complex, per-service MCP client setups
+- **Simplified MDM Deployment**: Enterprise IT can deploy standardized MCP configurations across the organization using Mobile Device Management (MDM) systems with just one proxy endpoint instead of managing multiple service configurations
+- **Reduced Configuration Complexity**: Clients only need to know one URL (`https://your-mcp-proxy-url/mcp`) instead of managing dozens of individual MCP server endpoints and their respective authentication mechanisms
+
 ## Architecture Overview
 
 The system consists of three main components that work together to provide a secure, scalable MCP proxy solution:
@@ -15,14 +20,14 @@ The system consists of three main components that work together to provide a sec
 ### 1. **MCP Proxy Service** (`docker/mcp_proxy/`)
 - Aggregated MCP proxy server with Google Workspace authentication
 - **Multi-Transport Support**: Native HTTP and STDIO transport protocols for optimal performance
-- PostgreSQL backend integration and comprehensive activity logging
+- Comprehensive activity logging and secure access control
 - **Documentation**: [docker/mcp_proxy/mcp_proxy.md](docker/mcp_proxy/mcp_proxy.md)
 
 ### 2. **OAuth 2.1 Sidecar Service** (`docker/mcp_oauth/`)
-- **Client-Specific Routing**: Automatically detects client type and provides appropriate OAuth endpoints
 - **Dynamic Client Registration (DCR)**: RFC 7591 compliant automatic client credential provisioning
 - **OAuth Discovery**: RFC 8414 compliant authorization server metadata discovery
-- **Callback Forwarding**: Handles localhost callbacks for Claude Code and VS Code clients
+- **Unified Authentication Flow**: All MCP clients follow the same OAuth flow with automatic DCR
+- **Callback Forwarding**: Handles localhost callbacks for desktop and CLI clients
 - **Documentation**: [docker/mcp_oauth/mcp_oauth.md](docker/mcp_oauth/mcp_oauth.md)
 
 ### 3. **AWS Infrastructure** (`cdk/mcp-proxy/`)
@@ -30,9 +35,9 @@ The system consists of three main components that work together to provide a sec
 - Documentation: [cdk/mcp-proxy/README.md](cdk/mcp-proxy/README.md)
 - Configuration Guide: [cdk/mcp-proxy/CONFIGURATION.md](cdk/mcp-proxy/CONFIGURATION.md)
 
-## OAuth 2.1 Authentication with Client-Specific Routing
+## OAuth 2.1 Authentication with Dynamic Client Registration
 
-The MCP proxy uses a sophisticated OAuth 2.1 sidecar service that provides enterprise-grade authentication with automatic client detection and routing.
+The MCP proxy uses a sophisticated OAuth 2.1 sidecar service that provides enterprise-grade authentication with automatic Dynamic Client Registration for all MCP clients.
 
 ### Purpose and Design Philosophy
 
@@ -45,7 +50,7 @@ The MCP Proxy system is designed to solve a fundamental challenge: **enabling se
 3. **Security at Scale**: Need for centralized authentication, logging, and access control across multiple backend services
 4. **Developer Experience**: Simplifying the complexity of OAuth flows while maintaining security standards
 
-**Solution Architecture**: The OAuth sidecar acts as an intelligent authentication proxy that adapts to each client's capabilities, providing a unified, secure gateway to MCP services.
+**Solution Architecture**: The OAuth sidecar acts as an intelligent authentication proxy that provides a unified, secure gateway to MCP services through Dynamic Client Registration.
 
 ### Why do we need an OAuth sidecar
 
@@ -63,7 +68,7 @@ Many MCP clients have fundamental limitations when working with standard OAuth f
 #### 2. **Enterprise Security Requirements**
 
 - **Centralized authentication**: Single point of control for user authentication and authorization
-- **Audit logging**: Comprehensive tracking of all user actions and authentication events
+- **Comprehensive logging**: Tracking of all user actions and authentication events
 - **Domain restrictions**: Ensuring only authorized Google Workspace users can access services
 - **Token management**: Secure handling of refresh tokens and session management
 
@@ -75,29 +80,22 @@ Many MCP clients have fundamental limitations when working with standard OAuth f
 
 ### How Authentication Works
 
-#### 1. **Client Detection & Routing**
-The OAuth sidecar automatically detects the type of MCP client and provides appropriate endpoints:
-
-- **Claude Code clients**: Get proxy endpoints for localhost callback handling
-- **Standard MCP clients**: Get direct Google OAuth endpoints for optimal performance
-
-Detection is based on User-Agent headers and client identification patterns.
-
-#### 2. **OAuth 2.1 Discovery**
-- Clients auto-discover endpoints from `/.well-known/oauth-protected-resource` and `/.well-known/oauth-authorization-server`
-- Client-specific endpoint metadata returned based on detection
-
-#### 3. **Dynamic Client Registration (DCR)**
+#### 1. **Dynamic Client Registration (DCR)**
 - RFC 7591 compliant automatic client credential provisioning
+- All MCP clients follow the same unified OAuth flow
 - No manual Google Cloud Console configuration required
 - Restricted callback URIs for approved MCP clients only
 
-#### 4. **Authentication Flow**
-- User is prompted for Google OAuth client ID and secret (never hardcoded)
+#### 2. **OAuth 2.1 Discovery**
+- Clients auto-discover endpoints from `/.well-known/oauth-protected-resource` and `/.well-known/oauth-authorization-server`
+- Unified endpoint metadata for all client types
+
+#### 3. **Authentication Flow**
+- User is redirected to Google's authentication page for login
 - Standard OAuth 2.0/OpenID Connect flow with Google Workspace validation
 - Only users in the configured Google Workspace domain are authorized
 
-#### 5. **Session Management**
+#### 4. **Session Management**
 - Bearer tokens validated and cached by the proxy for 5 minutes
 - All user actions logged for audit and troubleshooting
 
@@ -437,7 +435,6 @@ The CDK deploys several AWS resources:
 
 - **ECS Cluster**: Container orchestration for MCP Proxy and OAuth services
 - **Application Load Balancer**: HTTPS termination and traffic routing
-- **RDS PostgreSQL**: Database for audit logging and session management
 - **Secrets Manager**: Secure storage for OAuth credentials and API keys
 - **CloudWatch**: Logging and monitoring
 - **IAM Roles**: Service permissions and Workload Identity Federation
@@ -473,7 +470,7 @@ Use organization connectors with OAuth discovery enabled. Claude will automatica
 claude mcp add --transport http mcp-proxy https://your-mcp-proxy-url/mcp
 ```
 
-The OAuth sidecar detects Claude Code clients and provides proxy endpoints to handle localhost callbacks seamlessly.
+The OAuth sidecar provides a unified authentication flow with automatic Dynamic Client Registration for all MCP clients.
 
 ## Client Configuration Deployment
 
@@ -512,7 +509,7 @@ This approach enables IT administrators to standardize MCP configurations across
 ## Current Status
 
 ✅ **Production Ready**: The MCP proxy system includes:
-- **OAuth 2.1 Sidecar**: Client-specific routing with automatic DCR support
+- **OAuth 2.1 Sidecar**: Unified authentication flow with automatic DCR support
 - **Enterprise Authentication**: Google Workspace integration with comprehensive logging  
 - **Multi-Client Support**: Optimized for Claude Code, VS Code, Claude Web/Desktop
 - **AWS Deployment**: Production CDK infrastructure with load balancing and auto-scaling
@@ -546,7 +543,7 @@ The OAuth 2.1 sidecar implements enterprise-grade authentication with:
 
 - **RFC Compliance**: OAuth 2.1, OpenID Connect, DCR (RFC 7591), and Discovery (RFC 8414)
 - **Google Workspace Integration**: Domain-restricted authentication
-- **Client-Specific Routing**: Optimized endpoints per client type
+- **Unified Authentication Flow**: Consistent OAuth experience for all client types
 - **Comprehensive Logging**: Authentication and activity audit trails
 - **Token Management**: Secure caching and validation
 

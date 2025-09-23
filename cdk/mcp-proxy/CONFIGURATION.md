@@ -64,7 +64,6 @@ Each environment section supports the following configuration options:
 - `account`: AWS account ID (12 digits)
 - `region`: AWS region (e.g., "eu-west-1")
 - `desiredCount`: Number of ECS tasks to run
-- `dbUser`: Database username
 - `saEmail`: Google Service Account email for authentication (required)
 - `grafanaUrl`: Grafana instance URL for MCP server (required only if `grafanaSecretArn` is provided)
 - `enableExternalLoadBalancer`: Enable internet-facing load balancer for AI providers (optional, default: false)
@@ -406,7 +405,6 @@ Here's a complete example showing multiple environments:
         "account": "123456789012",
         "region": "eu-west-1",
         "desiredCount": 1,
-        "dbUser": "mcp_proxy",
         "tags": {
           "team": "platform",
           "costCenter": "platform"
@@ -442,7 +440,6 @@ Here's a complete example showing multiple environments:
         "account": "987654321098",
         "region": "eu-west-1",
         "desiredCount": 3,
-        "dbUser": "mcp_proxy",
         "tags": {
           "team": "platform",
           "costCenter": "platform",

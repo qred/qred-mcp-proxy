@@ -48,8 +48,7 @@ The CDK stack deploys a complete containerized MCP proxy system with:
 
 ### Services Deployed
 - **MCP Proxy Service**: Main aggregated proxy server
-- **OAuth 2.1 Sidecar**: Authentication and client routing service  
-- **PostgreSQL Backend**: Database integration service
+- **OAuth 2.1 Sidecar**: Authentication and Dynamic Client Registration service
 
 ### Security & Monitoring
 - **SSL/TLS**: Automatic certificate management
@@ -60,7 +59,6 @@ The CDK stack deploys a complete containerized MCP proxy system with:
 ### Optional Features
 - **DNS Management**: Automatic Route53 record creation (configurable)
 - **KMS Encryption**: Bring-your-own encryption keys (external key required)
-- **Cross-Account Access**: RDS access across AWS accounts
 
 ## Environment Configuration
 
