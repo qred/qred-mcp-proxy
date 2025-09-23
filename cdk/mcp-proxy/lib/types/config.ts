@@ -55,11 +55,11 @@ export interface EnvironmentConfig {
   // Existing resources configuration (for shared environments)
   existingResources?: {
     clusterName?: string;                 // Use existing ECS cluster instead of creating new one
-    internalLoadBalancerArn?: string;     // Use existing internal load balancer instead of creating new one  
+    internalLoadBalancerArn?: string;     // Use existing internal load balancer instead of creating new one
     externalLoadBalancerArn?: string;     // Use existing external load balancer instead of creating new one
     internalLoadBalancerSecurityGroupId?: string; // Security group ID of the existing internal load balancer
     externalLoadBalancerSecurityGroupId?: string; // Security group ID of the existing external load balancer
-    // Note: When using existing load balancers, the parent stack that owns them 
+    // Note: When using existing load balancers, the parent stack that owns them
     // should handle any additional ports, security groups, or listeners needed
   };
 }
@@ -81,7 +81,7 @@ export function validateConfig(envConfig: EnvironmentConfig, environmentName: st
   } else if (!/^\d{12}$/.test(envConfig.account)) {
     errors.push(`${environmentName}.account must be a 12-digit AWS account ID`);
   }
-  
+
   if (!envConfig.region || envConfig.region === '') {
     errors.push(`${environmentName}.region is required (e.g., "eu-west-1")`);
   }
@@ -136,7 +136,7 @@ export function validateConfig(envConfig: EnvironmentConfig, environmentName: st
       'mcpProxyRepositoryArn',
       'mcpOauthRepositoryArn'
     ];
-    
+
     requiredRepos.forEach(repoKey => {
       const repoArn = (envConfig.ecr as any)[repoKey];
       if (!repoArn || repoArn === '') {
@@ -165,7 +165,7 @@ export function validateConfig(envConfig: EnvironmentConfig, environmentName: st
       'googleWifSecretArn',
       'googleOauthSecretArn'
     ];
-    
+
     requiredSecrets.forEach(secretKey => {
       const secretArn = (envConfig.secrets as any)[secretKey];
       if (!secretArn || secretArn === '') {
@@ -181,7 +181,7 @@ export function validateConfig(envConfig: EnvironmentConfig, environmentName: st
       'posthogSecretArn',
       'openmetadataSecretArn'
     ];
-    
+
     optionalSecrets.forEach(secretKey => {
       const secretArn = (envConfig.secrets as any)[secretKey];
       if (secretArn && secretArn !== '' && !/^arn:aws:secretsmanager:.+:secret:.+$/.test(secretArn)) {
@@ -233,11 +233,11 @@ export function validateConfig(envConfig: EnvironmentConfig, environmentName: st
 export function loadConfig(app: App, environmentName?: string): EnvironmentConfig {
   // Default to 'default' if no environment specified
   const env = environmentName || process.env.CONFIG_ENV || 'default';
-  
+
   // Get current CDK environment
   const currentAccount = process.env.CDK_DEFAULT_ACCOUNT;
   const currentRegion = process.env.CDK_DEFAULT_REGION || 'eu-west-1';
-  
+
   if (!currentAccount) {
     throw new Error(
       `No AWS credentials detected. CDK_DEFAULT_ACCOUNT is not set.\n` +
@@ -245,10 +245,10 @@ export function loadConfig(app: App, environmentName?: string): EnvironmentConfi
       'Run "aws sts get-caller-identity" to verify your credentials.'
     );
   }
-  
+
   // Try to get environment-specific configuration first
   const environments = app.node.tryGetContext('environments') as Record<string, EnvironmentConfig>;
-  
+
   // If no environments config exists, try to use the account-based context (like parent project)
   if (!environments) {
     const accountConfig = app.node.tryGetContext(currentAccount);
@@ -262,7 +262,7 @@ export function loadConfig(app: App, environmentName?: string): EnvironmentConfi
         'See cdk.example.jsonc for reference.'
       );
     }
-    
+
     // Use account-based configuration (fallback to parent project style)
     const regionConfig = accountConfig[currentRegion];
     if (!regionConfig) {
@@ -271,7 +271,7 @@ export function loadConfig(app: App, environmentName?: string): EnvironmentConfi
         'Please add region-specific configuration to your cdk.json file.'
       );
     }
-    
+
     // Create a minimal environment config from account/region context
     const envConfig: EnvironmentConfig = {
       serviceName: 'mcp-proxy', // Default service name
@@ -314,7 +314,7 @@ export function loadConfig(app: App, environmentName?: string): EnvironmentConfi
       enableExternalLoadBalancer: regionConfig.enableExternalLoadBalancer || false,
       internalNetworks: regionConfig.internalNetworks  // Must be explicitly configured - no unsafe defaults
     };
-    
+
     return validateConfig(envConfig, env);
   }
 
@@ -352,7 +352,7 @@ export function loadConfig(app: App, environmentName?: string): EnvironmentConfi
 
   // Validate the configuration
   const validatedConfig = validateConfig(finalConfig, env);
-  
+
   return validatedConfig;
 }
 

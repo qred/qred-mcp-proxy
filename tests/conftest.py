@@ -2,9 +2,7 @@
 
 import pytest
 import os
-import tempfile
 from unittest.mock import Mock, patch
-from typing import Generator
 
 
 @pytest.fixture
@@ -17,8 +15,8 @@ def mock_oauth_config():
             "redirect_uris": [
                 "https://claude.ai/api/mcp/auth_callback",
                 "https://claude.com/api/mcp/auth_callback",
-                "http://127.0.0.1:33418"
-            ]
+                "http://127.0.0.1:33418",
+            ],
         }
     }
 
@@ -31,13 +29,13 @@ def mock_mcp_servers_config():
             "test-server-1": {
                 "command": "python",
                 "args": ["-m", "test_server"],
-                "required_groups": ["test-group-1", "shared-group"]
+                "required_groups": ["test-group-1", "shared-group"],
             },
             "test-server-2": {
                 "command": "node",
                 "args": ["test-server.js"],
-                "required_groups": ["test-group-2", "shared-group"]
-            }
+                "required_groups": ["test-group-2", "shared-group"],
+            },
         }
     }
 
@@ -46,14 +44,14 @@ def mock_mcp_servers_config():
 def mock_env_vars(mock_oauth_config, tmp_path):
     """Mock environment variables for testing."""
     config_file = tmp_path / "mcp_servers.json"
-    
+
     env_vars = {
         "GOOGLE_OAUTH": "{}",
         "MCP_SERVERS_CONFIG_PATH": str(config_file),
         "MCP_OAUTH_REFRESH_GROUPS_INTERVAL": "5",
-        "MCP_OAUTH_REFRESH_USERS_INTERVAL": "10"
+        "MCP_OAUTH_REFRESH_USERS_INTERVAL": "10",
     }
-    
+
     with patch.dict(os.environ, env_vars, clear=False):
         yield env_vars, config_file
 

@@ -47,7 +47,7 @@ pytest tests/ -v
 # OAuth server tests only
 python run_tests.py --oauth
 
-# Configuration tests only  
+# Configuration tests only
 python run_tests.py --config
 
 # CDK synthesis tests only
@@ -126,7 +126,7 @@ Tests extensively mock external dependencies:
 Common test fixtures in `conftest.py`:
 
 - `mock_oauth_config`: Sample OAuth configuration
-- `mock_mcp_servers_config`: Sample MCP servers configuration  
+- `mock_mcp_servers_config`: Sample MCP servers configuration
 - `mock_env_vars`: Environment variables for testing
 - `mock_google_wif`: Mocked Google Workspace integration
 

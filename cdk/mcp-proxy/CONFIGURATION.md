@@ -236,7 +236,7 @@ Configure existing resources in the `existingResources` section:
 - **`clusterName`**: Name of existing ECS cluster to use instead of creating a new one
 - **`internalLoadBalancerArn`**: ARN of existing internal Application Load Balancer
 - **`internalLoadBalancerSecurityGroupId`**: Security group ID of the existing internal load balancer
-- **`externalLoadBalancerArn`**: (Optional) ARN of existing external Application Load Balancer  
+- **`externalLoadBalancerArn`**: (Optional) ARN of existing external Application Load Balancer
 - **`externalLoadBalancerSecurityGroupId`**: (Optional) Security group ID of the existing external load balancer
 
 ### Important Notes for Shared Infrastructure
@@ -274,10 +274,10 @@ Configure existing resources in the `existingResources` section:
       "vpc": {"vpcId": "vpc-xxxxxxxxx"},
       "dns": {"hostedZoneId": "Z03108621XXXXXXXXXX", "zoneName": "example.com"}
     },
-    
+
     // Child environment using existing infrastructure
     "dev1": {
-      "serviceName": "mcp-proxy-dev1", 
+      "serviceName": "mcp-proxy-dev1",
       "account": "123456789012",
       "region": "eu-west-1",
       "servicePort": 8443,             // Use different port from parent
@@ -289,11 +289,11 @@ Configure existing resources in the `existingResources` section:
       // DNS will be managed by parent stack - access via parent's domain:8443
       "assets": {"bucketName": "shared-assets", "bucketPrefix": "dev1/"}
     },
-    
-    // Another child environment  
+
+    // Another child environment
     "dev2": {
       "serviceName": "mcp-proxy-dev2",
-      "account": "123456789012", 
+      "account": "123456789012",
       "region": "eu-west-1",
       "servicePort": 9443,             // Use third port
       "existingResources": {
@@ -384,7 +384,7 @@ IMAGE_TAG=v1.2.3 npm run cdk deploy
 # Deploy production environment with specific image
 CONFIG_ENV=production IMAGE_TAG=v1.2.3 npm run cdk deploy
 
-# Deploy development environment with latest dev build  
+# Deploy development environment with latest dev build
 CONFIG_ENV=development IMAGE_TAG=dev-latest npm run cdk deploy
 ```
 
@@ -493,7 +493,7 @@ The port configuration system supports both standalone and shared infrastructure
   - Default: `[443]` for standalone deployments
   - Example: `[443, 8443, 9443]` for shared infrastructure supporting multiple services
 
-- **`servicePort`**: Port for this specific service instance  
+- **`servicePort`**: Port for this specific service instance
   - Must be one of the ports listed in `loadBalancerPorts`
   - Default: `443`
   - Each service in a shared environment should use a different port
@@ -515,7 +515,7 @@ The port configuration system supports both standalone and shared infrastructure
 ```json
 {
   "serviceName": "mcp-proxy-dev1",
-  "account": "123456789012", 
+  "account": "123456789012",
   "region": "eu-west-1",
   // Shared configuration - multiple services sharing infrastructure
   "loadBalancerPorts": [443, 8443, 9443],  // Load balancer configured for multiple ports
@@ -547,7 +547,7 @@ When deploying multiple environments that share infrastructure:
 
 **Use cases:**
 - **Production**: Use default port 443 for standard HTTPS
-- **Development**: Use port 8443 to avoid conflicts with other services  
+- **Development**: Use port 8443 to avoid conflicts with other services
 - **Shared Infrastructure**: Multiple environments (dev1: 8443, dev2: 9443, staging: 443)
 - **Cost Optimization**: Share expensive resources like load balancers across multiple environments
 

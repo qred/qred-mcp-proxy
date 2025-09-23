@@ -152,19 +152,19 @@ Set up Workload Identity Federation for secure authentication from AWS:
    gcloud projects add-iam-policy-binding YOUR_PROJECT_ID \
      --member="serviceAccount:mcp-proxy-sa@YOUR_PROJECT_ID.iam.gserviceaccount.com" \
      --role="roles/iam.serviceAccountTokenCreator"
-   
+
    # Enable Admin SDK API for domain-wide delegation
    gcloud services enable admin.googleapis.com --project="YOUR_PROJECT_ID"
    ```
 
 3. **Configure domain-wide delegation** (Required for Google Workspace user authentication):
-   
+
    a. **Get the service account's unique ID**:
    ```bash
    gcloud iam service-accounts describe mcp-proxy-sa@YOUR_PROJECT_ID.iam.gserviceaccount.com \
      --format="value(uniqueId)"
    ```
-   
+
    b. **Set up domain-wide delegation in Google Workspace Admin Console**:
    - Go to [Google Workspace Admin Console](https://admin.google.com/)
    - Navigate to Security > Access and data control > API controls
@@ -192,13 +192,13 @@ Set up Workload Identity Federation for secure authentication from AWS:
      --location="global" \
      --format="value(name)"
    ```
-   
+
    This should return a value like: `projects/123456789/locations/global/workloadIdentityPools/mcp-proxy-pool`
 
 6. **Create Workload Identity Provider for AWS with security constraints**:
-   
+
    🛑 **SECURITY NOTE**: Always add attribute conditions to restrict access to the Workload Identity Pool. The condition below restricts access to only your specific AWS account and ECS task role.
-   
+
    ```bash
    # TODO: Replace ${PROJECT_ID}, ${AWS_ACCOUNT_ID}, and ${ECS_TASK_ROLE_NAME} with your values
    gcloud iam workload-identity-pools providers create-aws mcp-proxy-aws \
@@ -210,7 +210,7 @@ Set up Workload Identity Federation for secure authentication from AWS:
      --attribute-mapping="google.subject=assertion.arn,attribute.aws_role=assertion.arn" \
      --attribute-condition="attribute.aws_role.startsWith('arn:aws:sts::${AWS_ACCOUNT_ID}:assumed-role/${ECS_TASK_ROLE_NAME}/')"
    ```
-   
+
    **Example with actual values**:
    ```bash
    # If your AWS account ID is 123456789012 and ECS task role is mcp-proxy-task-role
@@ -244,7 +244,7 @@ Set up Workload Identity Federation for secure authentication from AWS:
      --location="global" \
      --format="value(name)"
    ```
-   
+
    This will return the full provider name needed for the configuration file.
 
 9. **Generate the Workload Identity configuration**:
@@ -268,17 +268,17 @@ Set up Workload Identity Federation for secure authentication from AWS:
 3. **Required Google Workspace API scopes**: Configure the service account with these specific scopes:
    - `https://www.googleapis.com/auth/admin.directory.user.readonly` - Read user information
    - `https://www.googleapis.com/auth/admin.directory.group.member.readonly` - Read group memberships
-   
+
    **Setting up domain-wide delegation**:
    ```bash
    # Enable the Admin SDK API
    gcloud services enable admin.googleapis.com --project="${PROJECT_ID}"
-   
+
    # Note the service account's unique ID for Google Workspace Admin Console
    gcloud iam service-accounts describe mcp-proxy-sa@${PROJECT_ID}.iam.gserviceaccount.com \
      --format="value(uniqueId)"
    ```
-   
+
    Then in Google Workspace Admin Console:
    - Go to Security > Access and data control > API controls
    - Click "Manage Domain-wide Delegation"
@@ -380,7 +380,7 @@ aws secretsmanager create-secret \
   --name "mcp-proxy/grafana" \
   --secret-string '{"api_key": "your-grafana-api-key", "url": "https://your-grafana.url"}'
 
-# PostHog (optional)  
+# PostHog (optional)
 aws secretsmanager create-secret \
   --name "mcp-proxy/posthog" \
   --secret-string '{"api_key": "your-posthog-api-key", "host": "https://app.posthog.com"}'
@@ -394,7 +394,7 @@ aws secretsmanager create-secret \
 ### 4. AWS Permissions
 Ensure your AWS credentials have permissions for:
 - **ECS**: Full access for cluster and service management
-- **EC2**: VPC, security groups, and load balancer management  
+- **EC2**: VPC, security groups, and load balancer management
 - **IAM**: Role creation and policy management
 - **Route53**: DNS record management
 - **Secrets Manager**: Secret access and management
@@ -512,7 +512,7 @@ This approach enables IT administrators to standardize MCP configurations across
 
 ✅ **Production Ready**: The MCP proxy system includes:
 - **OAuth 2.1 Sidecar**: Unified authentication flow with automatic DCR support
-- **Enterprise Authentication**: Google Workspace integration with comprehensive logging  
+- **Enterprise Authentication**: Google Workspace integration with comprehensive logging
 - **Multi-Client Support**: Optimized for Claude Code, VS Code, Claude Web/Desktop
 - **AWS Deployment**: Production CDK infrastructure with load balancing and auto-scaling
 
@@ -551,7 +551,24 @@ The OAuth 2.1 sidecar implements enterprise-grade authentication with:
 
 ## Development
 
+### Quick Start
+
+```bash
+# Clone and install dependencies
+git clone <repository-url>
+cd qred-mcp-proxy
+uv sync
+
+# 🎯 RECOMMENDED: Install automated quality hooks
+uv run pre-commit install
+
+# Verify everything works
+uv run pre-commit run --all-files
+```
+
 ### Local Development Setup
+
+For detailed development guidelines, see [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ### Building and Pushing
 ```bash

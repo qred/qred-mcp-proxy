@@ -36,16 +36,66 @@ jobs:
 
       - name: Install dependencies
         run: |
-          uv sync --group test
-      
+          uv sync --group test --group dev
+
+      - name: Run code quality checks
+        run: |
+          echo "🔍 Running comprehensive code quality checks..."
+          echo ""
+
+          # Ruff - Fast Python linter (replaces flake8 + isort)
+          echo "🔧 Running Ruff linter checks..."
+          echo "   → Checking imports, code style, common errors, and potential bugs"
+          uv run ruff check ./docker
+          echo "   ✅ Ruff linting passed"
+          echo ""
+
+          # Ruff formatter check
+          echo "🎨 Checking Ruff formatting..."
+          echo "   → Verifying consistent code style (88-character line length)"
+          uv run ruff format --check ./docker
+          echo "   ✅ Ruff formatting passed"
+          echo ""
+
+          # MyPy - Static type checking
+          echo "🔬 Running MyPy type checking..."
+          echo "   → Analyzing type hints and catching type errors"
+          uv run mypy ./docker --ignore-missing-imports --show-error-codes --no-strict-optional
+          echo "   ✅ MyPy type checking passed"
+          echo ""
+
+          # Bandit - Security vulnerability scanner
+          echo "🔒 Running Bandit security checks..."
+          echo "   → Scanning for common security issues (excluding dependencies)"
+          uv run bandit -r ./docker -f json -o bandit-report.json --exclude "*/.venv/*,*/.venv/**" || true
+          uv run bandit -r ./docker --severity-level medium --exclude "*/.venv/*,*/.venv/**"
+          echo "   ✅ Bandit security checks passed"
+          echo ""
+
+          echo "🎉 All code quality checks completed successfully!"
+
+      - name: Create Code Quality Summary
+        run: |
+          echo "## 🎯 Code Quality Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "All code quality checks have passed successfully! ✅" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Tool | Purpose | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|------|---------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| 🔧 **Ruff Linter** | Import organization, code style, error detection | ✅ Passed |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🎨 **Ruff Formatter** | Consistent code formatting (88-char line length) | ✅ Passed |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🔬 **MyPy** | Static type analysis and type safety | ✅ Passed |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🔒 **Bandit** | Security vulnerability scanning | ✅ Passed |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
       - name: Run OAuth server tests
         run: |
           uv run python tests/run_tests.py --oauth --ctrf
-      
-      - name: Run MCP proxy application tests  
+
+      - name: Run MCP proxy application tests
         run: |
           uv run python tests/run_tests.py --proxy --ctrf
-      
+
       - name: Publish Test Report
         if: always()
         uses: ctrf-io/github-test-reporter@646f98cfc16c6f7a0e1f6100cabe2deb95dd2eef

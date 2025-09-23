@@ -76,7 +76,7 @@ uv run mcp-oauth --log-level debug
 - `/.well-known/oauth-authorization-server` - OAuth discovery metadata (client-specific)
 - `/.well-known/oauth-protected-resource` - Protected resource metadata
 
-### OAuth Endpoints  
+### OAuth Endpoints
 - `/oauth/register` - Dynamic Client Registration (POST)
 - `/oauth/auth` - Authorization endpoint proxy (Claude Code only)
 - `/oauth/token` - Token endpoint proxy (Claude Code only)

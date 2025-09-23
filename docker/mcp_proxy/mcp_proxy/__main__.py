@@ -31,7 +31,9 @@ SSE_URL: t.Final[str | None] = os.getenv(
 def _setup_argument_parser() -> argparse.ArgumentParser:
     """Set up and return the argument parser for the MCP proxy."""
     parser = argparse.ArgumentParser(
-        description=("Start the MCP proxy server with aggregated backend support and OAuth 2.1 authentication."),
+        description=(
+            "Start the MCP proxy server with aggregated backend support and OAuth 2.1 authentication."
+        ),
         epilog=(
             "Examples:\n"
             "  mcp-proxy --named-server-config config/servers.json --port 8080 --google-auth-required\n"
@@ -217,8 +219,12 @@ def _handle_sse_client_mode(
 ) -> None:
     """Handle SSE/StreamableHTTP client mode - removed in this version."""
     logger.error("SSE/StreamableHTTP client mode has been removed in this version.")
-    logger.error("This version focuses on aggregated server mode for better enterprise deployment.")
-    logger.error("To run in server mode, remove the URL argument and use --named-server-config or --named-server arguments with --no-aggregated flag.")
+    logger.error(
+        "This version focuses on aggregated server mode for better enterprise deployment."
+    )
+    logger.error(
+        "To run in server mode, remove the URL argument and use --named-server-config or --named-server arguments with --no-aggregated flag."
+    )
     sys.exit(1)
 
 
@@ -234,7 +240,9 @@ def _configure_default_server(
         return None
 
     default_server_env = base_env.copy()
-    default_server_env.update(dict(args_parsed.env))  # Specific env vars for default server
+    default_server_env.update(
+        dict(args_parsed.env)
+    )  # Specific env vars for default server
 
     default_stdio_params = StdioServerParameters(
         command=args_parsed.command_or_url,
@@ -284,7 +292,9 @@ def _configure_named_servers_from_cli(
         try:
             command_parts = shlex.split(command_string)
             if not command_parts:  # Handle empty command_string
-                logger.error("Empty COMMAND_STRING for named server '%s'. Skipping.", name)
+                logger.error(
+                    "Empty COMMAND_STRING for named server '%s'. Skipping.", name
+                )
                 continue
 
             command = command_parts[0]
@@ -315,10 +325,14 @@ def _configure_named_servers_from_cli(
 def _create_mcp_settings(args_parsed: argparse.Namespace) -> MCPServerSettings:
     """Create MCP server settings from parsed arguments."""
     return MCPServerSettings(
-        bind_host=args_parsed.host if args_parsed.host is not None else args_parsed.sse_host,
+        bind_host=(
+            args_parsed.host if args_parsed.host is not None else args_parsed.sse_host
+        ),
         port=args_parsed.port if args_parsed.port is not None else args_parsed.sse_port,
         stateless=args_parsed.stateless,
-        allow_origins=args_parsed.allow_origin if len(args_parsed.allow_origin) > 0 else None,
+        allow_origins=(
+            args_parsed.allow_origin if len(args_parsed.allow_origin) > 0 else None
+        ),
         log_level="DEBUG" if args_parsed.debug else "INFO",
         google_auth_required=args_parsed.google_auth_required,
         aggregated_mode=args_parsed.aggregated,
@@ -329,7 +343,7 @@ def main() -> None:
     """Start the client using asyncio."""
     parser = _setup_argument_parser()
     args_parsed = parser.parse_args()
-    
+
     # Configure logger debug mode based on CLI argument
     set_debug_mode(args_parsed.debug)
 
@@ -367,17 +381,19 @@ def main() -> None:
     # Configure named servers
     named_server_params: dict[str, ServerParameters] = {}
     # Load named servers and excluded tools configuration
-    excluded_tools_config = {}
-    required_groups_config = {}
-    
+    excluded_tools_config: dict[str, list[str]] = {}
+    required_groups_config: dict[str, list[str]] = {}
+
     if args_parsed.named_server_config:
         if args_parsed.named_server_definitions:
             logger.warning(
                 "--named-server CLI arguments are ignored when --named-server-config is provided.",
             )
-        named_server_params, excluded_tools_config, required_groups_config = _load_named_servers_from_config(
-            args_parsed.named_server_config,
-            base_env,
+        named_server_params, excluded_tools_config, required_groups_config = (
+            _load_named_servers_from_config(
+                args_parsed.named_server_config,
+                base_env,
+            )
         )
     elif args_parsed.named_server_definitions:
         stdio_params = _configure_named_servers_from_cli(

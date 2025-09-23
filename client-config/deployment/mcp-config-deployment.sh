@@ -59,7 +59,7 @@ update_file_ownership() {
   filePath=$1
 
   print_debug_log "Checking file ownership for file $filePath"
-  
+
   # Only change ownership of files/directories in our service directory or Claude config files
   if [[ "$filePath" != "$SERVICE_DIR"* ]] && [[ "$filePath" != "$CLAUDE_MCP_PATH" ]] && [[ "$filePath" != "$CLAUDE_SETTINGS_PATH" ]] && [[ "$filePath" != "$(dirname "$CLAUDE_SETTINGS_PATH")" ]]; then
     print_debug_log "Skipping ownership change for $filePath (not in service directory or Claude configs)"
@@ -141,9 +141,9 @@ PLAYWRIGHT_CONFIG_TEMPLATE=$( cat <<'EOF'
     // List of origins to block the browser to request. Origins matching both `allowedOrigins` and `blockedOrigins` will be blocked.
     blockedOrigins?: string[];
   };
- 
+
   /**
-   * Whether to send image responses to the client. Can be "allow" or "omit". 
+   * Whether to send image responses to the client. Can be "allow" or "omit".
    * Defaults to "allow".
    */
   imageResponses?: 'allow' | 'omit';
@@ -223,8 +223,8 @@ MCP_JSON=$( cat <<EOF
     "atlassian": {
       "command": "npx",
       "args": [
-        "-y", 
-        "mcp-remote", 
+        "-y",
+        "mcp-remote",
         "https://mcp.atlassian.com/v1/sse"
       ],
       "type": "stdio"
@@ -237,7 +237,7 @@ MCP_JSON=$( cat <<EOF
       "command": "npx",
       "args": [
         "@playwright/mcp",
-        "--config", 
+        "--config",
         "${PLAYWRIGHT_CUSTOM_CONFIG_DIR}/config.json"
       ],
       "type": "stdio"
@@ -277,7 +277,7 @@ MCP_CLAUDE_JSON=$( cat <<EOF
       "args": [
         "-y",
         "@playwright/mcp",
-        "--config", 
+        "--config",
         "${PLAYWRIGHT_CUSTOM_CONFIG_DIR}/config.json"
       ]
     },
@@ -365,9 +365,9 @@ strip_json_comments() {
 update_claude_config() {
   local file_path="$1"
   local desired_mcp_servers="$2"
-  
+
   print_info_log "Updating Claude config at $file_path"
-  
+
   # Read current config
   local current_config
   if current_config=$(jq '.' "$file_path" 2>/dev/null); then
@@ -376,10 +376,10 @@ update_claude_config() {
     print_debug_log "Failed to parse Claude config, treating as empty"
     current_config='{}'
   fi
-  
+
   # Extract desired mcpServers from the template
   local desired_servers=$(echo "$desired_mcp_servers" | jq '.mcpServers')
-  
+
   # Update the configuration:
   # 1. Set global mcpServers at root level
   # 2. Remove any mcpServers from individual projects (purge project-specific servers)
@@ -394,7 +394,7 @@ update_claude_config() {
       .
     end
   ')
-  
+
   print_debug_log "Updated Claude config - set global mcpServers and purged project-specific mcpServers"
   echo "$updated_config" > "$file_path"
   return 0
@@ -403,9 +403,9 @@ update_claude_config() {
 update_claude_settings_config() {
   local file_path="$1"
   local desired_settings="$2"
-  
+
   print_info_log "Updating Claude settings config at $file_path"
-  
+
   # Read current config
   local current_config
   if current_config=$(jq '.' "$file_path" 2>/dev/null); then
@@ -414,11 +414,11 @@ update_claude_settings_config() {
     print_debug_log "Failed to parse Claude settings config, treating as empty"
     current_config='{}'
   fi
-  
+
   # Extract desired settings components
   local desired_enabled_servers=$(echo "$desired_settings" | jq '.enabledMcpServers')
   local desired_env=$(echo "$desired_settings" | jq '.env')
-  
+
   # Update the configuration:
   # 1. Set/update the enabledMcpServers
   # 2. Merge env settings (preserve existing keys, update/add our specific keys)
@@ -429,7 +429,7 @@ update_claude_settings_config() {
     # Merge env settings - preserve existing keys, update/add our proxy keys
     .env = (.env // {}) + $new_env
   ')
-  
+
   print_debug_log "Updated Claude settings config structure (merged env variables)"
   echo "$updated_config" > "$file_path"
   return 0
@@ -561,11 +561,11 @@ for mcp_path in "${MCP_PATHS[@]}"; do
     else
   	  desired_mcp_content=$MCP_JSON
     fi
-    
+
     desired_config=$(echo "$desired_mcp_content" | jq '.')
-    
+
     print_info_log "Comparing configurations for $mcp_path"
-    
+
     # Debug logging - handle different config structures
     if [[ "$mcp_path" == "$CLAUDE_SETTINGS_PATH" ]]; then
       print_debug_log "Current config enabledMcpServers: $(echo "$current_config" | jq '.enabledMcpServers // null')"
@@ -577,7 +577,7 @@ for mcp_path in "${MCP_PATHS[@]}"; do
       print_debug_log "Current config servers: $(echo "$current_config" | jq '.servers | keys // empty')"
       print_debug_log "Desired config servers: $(echo "$desired_config" | jq '.servers | keys // empty')"
     fi
-    
+
     # Check playwright specifically (debug only)
     if [[ "$DEBUG_MODE" == "true" ]]; then
       if [[ "$mcp_path" == "$CLAUDE_MCP_PATH" ]]; then
@@ -590,7 +590,7 @@ for mcp_path in "${MCP_PATHS[@]}"; do
       print_debug_log "Current playwright config: $current_playwright"
       print_debug_log "Desired playwright config: $desired_playwright"
     fi
-    
+
     # Debug the comparison
     if [[ "$mcp_path" == "$CLAUDE_MCP_PATH" ]]; then
       # For Claude MCP config, compare only the mcpServers section
@@ -607,13 +607,13 @@ for mcp_path in "${MCP_PATHS[@]}"; do
       comparison_result=$(jq --argjson a "$current_config" --argjson b "$desired_config" -n '$a == $b')
       print_debug_log "Comparison result: $comparison_result"
     fi
-    
+
     if [[ "$comparison_result" == "true" ]]; then
       print_info_log "No change needed for $mcp_path"
       continue
     fi
     create_backup "$mcp_path" "$app_type"
-    
+
     # Handle Claude MCP config specially - preserve user settings, only update mcpServers
     if [[ "$mcp_path" == "$CLAUDE_MCP_PATH" ]]; then
       print_info_log "Updating Claude MCP config at $mcp_path"
@@ -648,11 +648,11 @@ for mcp_path in "${MCP_PATHS[@]}"; do
       print_debug_log "File $mcp_path has comments, stripping them"
       current_root=$(strip_json_comments "$mcp_path" | jq '.')
     fi
-    
+
     desired_root=$(echo "$MCP_JSON" | jq '.')
     comparison_result=$(jq --argjson a "$current_root" --argjson b "$desired_root" -n '$a == $b')
     print_debug_log "Comparison result: $comparison_result"
-    
+
     if [[ "$comparison_result" == "true" ]]; then
       print_info_log "No change needed for $mcp_path"
       continue

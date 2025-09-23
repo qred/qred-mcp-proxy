@@ -61,17 +61,17 @@ EOF
 
   // Build proxy container secrets dynamically
   const proxySecrets: { [key: string]: ecs.Secret } = {};
-  
+
   if (stackProps.posthogSecretArn) {
     proxySecrets.POSTHOG_API_KEY = ecs.Secret.fromSecretsManager(
-      secretsmanager.Secret.fromSecretCompleteArn(scope, 'PosthogApiKey', stackProps.posthogSecretArn), 
+      secretsmanager.Secret.fromSecretCompleteArn(scope, 'PosthogApiKey', stackProps.posthogSecretArn),
       'api_key'
     );
   }
-  
+
   if (stackProps.openmetadataSecretArn) {
     proxySecrets.OPENMETADATA_JWT_TOKEN = ecs.Secret.fromSecretsManager(
-      secretsmanager.Secret.fromSecretCompleteArn(scope, 'OpenmetadataJWTToken', stackProps.openmetadataSecretArn), 
+      secretsmanager.Secret.fromSecretCompleteArn(scope, 'OpenmetadataJWTToken', stackProps.openmetadataSecretArn),
       'token'
     );
   }
@@ -95,7 +95,7 @@ EOF
     if (!stackProps.grafanaUrl) {
       throw new Error('grafanaUrl is required when grafanaSecretArn is provided');
     }
-    
+
     mcpContainerOptions.push({
       id: 'grafana',
       image: ecs.ContainerImage.fromRegistry('mcp/grafana'),
@@ -103,7 +103,7 @@ EOF
       containerPort: 8000,
       secrets: {
         GRAFANA_SERVICE_ACCOUNT_TOKEN: ecs.Secret.fromSecretsManager(
-          secretsmanager.Secret.fromSecretCompleteArn(scope, 'GrafanaSAToken', stackProps.grafanaSecretArn), 
+          secretsmanager.Secret.fromSecretCompleteArn(scope, 'GrafanaSAToken', stackProps.grafanaSecretArn),
           'token'
         )
       },
@@ -207,7 +207,7 @@ export function getSimpleFargateService(
   desiredCount: number,
   targetGroupAttachments: TargetGroupAttachment[]
 ): ecs.FargateService {
-  
+
   // Create a regular Fargate service
   const service = new ecs.FargateService(scope, `FargateService`, {
     serviceName: id,

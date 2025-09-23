@@ -12,7 +12,7 @@ echo "Setting permissions for /app/keepalive"
 chown -R app:app /app/keepalive
 chmod -R 755 /app/keepalive
 
-# Fix permissions for SonarQube storage (if directory exists)  
+# Fix permissions for SonarQube storage (if directory exists)
 if [ -d "/app/sonarqube/storage" ]; then
     echo "Setting permissions for /app/sonarqube/storage"
     chown -R app:app /app/sonarqube/storage

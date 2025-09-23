@@ -38,15 +38,41 @@ This project and everyone participating in it is governed by our [Code of Conduc
 
 ## Development Setup
 
+### Quick Start (Recommended)
+
+The fastest way to get started with development:
+
+```bash
+# Clone and install dependencies
+git clone https://github.com/qred/qred-mcp-proxy.git
+cd qred-mcp-proxy
+uv sync
+
+# 🎯 RECOMMENDED: Install automated quality hooks
+uv run pre-commit install
+
+# Verify everything works
+uv run pre-commit run --all-files
+```
+
+This setup provides:
+- ✅ All Python dependencies installed
+- ✅ Automated code quality checks on every commit
+- ✅ Consistent formatting and linting
+- ✅ Security scanning
+- ✅ Type checking
+
 ### Prerequisites
 
-- **Node.js** 18+ and npm
 - **Python** 3.11+ with uv package manager
-- **Docker** and Docker Compose
+- **Node.js** 18+ and npm (for CDK deployment)
+- **Docker** and Docker Compose (for container development)
 - **AWS CLI** configured (for infrastructure testing)
 - **Google Cloud SDK** (for authentication testing)
 
-### Local Development Environment
+### Detailed Development Environment
+
+If you need more control or are working on specific components:
 
 1. **Clone the repository**:
    ```bash
@@ -58,29 +84,34 @@ This project and everyone participating in it is governed by our [Code of Conduc
    ```bash
    # Install uv if not already installed
    curl -LsSf https://astral.sh/uv/install.sh | sh
-   
+
    # Create virtual environment and install dependencies
    uv sync
    ```
 
-3. **Set up CDK environment**:
+3. **Set up pre-commit hooks (Highly Recommended)**:
+   ```bash
+   uv run pre-commit install
+   ```
+
+4. **Set up CDK environment** (for infrastructure changes):
    ```bash
    cd cdk/mcp-proxy
    npm install
    npm run build
    ```
 
-4. **Set up Docker development**:
+5. **Set up Docker development** (for container changes):
    ```bash
    # Build development images
    cd docker/mcp_proxy
    docker build -t mcp-proxy:dev .
-   
+
    cd ../mcp_oauth
    docker build -t mcp-oauth:dev .
    ```
 
-5. **Configure environment**:
+6. **Configure environment**:
    ```bash
    # Copy example configuration
    cp cdk/mcp-proxy/cdk.example.jsonc cdk/mcp-proxy/cdk.json
@@ -89,34 +120,44 @@ This project and everyone participating in it is governed by our [Code of Conduc
 
 ### Development Workflow
 
-1. **Run tests locally**:
+1. **Make your changes**
+2. **Automated quality checks** (if pre-commit is installed):
+   ```bash
+   # Pre-commit hooks run automatically on commit
+   git add .
+   git commit -m "your changes"  # Quality checks run automatically
+   ```
+
+3. **Manual quality checks** (if needed):
+   ```bash
+   # Run all checks manually
+   uv run pre-commit run --all-files
+
+   # Or run individual tools
+   uv run ruff check .
+   uv run ruff format .
+   uv run mypy .
+   uv run bandit -r .
+   ```
+
+4. **Run tests**:
    ```bash
    # Python tests
    uv run pytest
-   
-   # TypeScript tests
+
+   # TypeScript tests (if working on CDK)
    cd cdk/mcp-proxy && npm test
    ```
 
-2. **Local development server**:
+5. **Local development servers** (for testing):
    ```bash
    # Run MCP proxy locally
    cd docker/mcp_proxy
    uv run python -m mcp_proxy_qred
-   
+
    # Run OAuth sidecar locally
    cd docker/mcp_oauth
    uv run python -m mcp_oauth
-   ```
-
-3. **Linting and formatting**:
-   ```bash
-   # Python
-   uv run ruff check .
-   uv run ruff format .
-   
-   # TypeScript
-   cd cdk/mcp-proxy && npm run lint
    ```
 
 ## Contributing Process
@@ -209,21 +250,21 @@ logger = logging.getLogger(__name__)
 
 def process_oauth_token(token: str, scope: Optional[str] = None) -> dict[str, str]:
     """Process OAuth token and return user information.
-    
+
     Args:
         token: The OAuth access token
         scope: Optional scope restriction
-        
+
     Returns:
         Dictionary containing user information
-        
+
     Raises:
         ValueError: If token is invalid
         AuthenticationError: If token verification fails
     """
     if not token:
         raise ValueError("Token cannot be empty")
-    
+
     logger.info("Processing OAuth token", extra={"scope": scope})
     # Implementation here
 ```
@@ -259,7 +300,7 @@ export interface LoadBalancerConfig {
 export class McpProxyLoadBalancer extends Construct {
   constructor(scope: Construct, id: string, config: LoadBalancerConfig) {
     super(scope, id);
-    
+
     // Implementation here
   }
 }
@@ -347,7 +388,7 @@ Brief description of the changes
 
 ## Type of Change
 - [ ] Bug fix (non-breaking change which fixes an issue)
-- [ ] New feature (non-breaking change which adds functionality)  
+- [ ] New feature (non-breaking change which adds functionality)
 - [ ] Breaking change (fix or feature that would cause existing functionality to not work as expected)
 - [ ] Documentation update
 

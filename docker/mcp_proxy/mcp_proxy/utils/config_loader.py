@@ -15,6 +15,7 @@ from .logger import logger
 @dataclass
 class HttpServerParameters:
     """Parameters for HTTP-based MCP servers."""
+
     url: str
     headers: dict[str, str] | None = None
 
@@ -53,7 +54,9 @@ def load_named_server_configs_from_file(
         logger.exception("Configuration file not found: %s", config_file_path)
         raise
     except json.JSONDecodeError:
-        logger.exception("Error decoding JSON from configuration file: %s", config_file_path)
+        logger.exception(
+            "Error decoding JSON from configuration file: %s", config_file_path
+        )
         raise
     except Exception as e:
         logger.exception(
@@ -76,7 +79,9 @@ def load_named_server_configs_from_file(
                 config_file_path,
             )
             continue
-        if not server_config.get("enabled", True):  # Default to True if 'enabled' is not present
+        if not server_config.get(
+            "enabled", True
+        ):  # Default to True if 'enabled' is not present
             logger.info("Named server '%s' from config is not enabled. Skipping.", name)
             continue
 
@@ -84,7 +89,7 @@ def load_named_server_configs_from_file(
         excluded_tool_patterns = server_config.get("excluded_tools", [])
         required_group_patterns = server_config.get("required_groups", [])
         transport_type = server_config.get("transportType", "stdio").lower()
-        
+
         # Validate excluded_tools format
         if excluded_tool_patterns:
             if not isinstance(excluded_tool_patterns, list):
@@ -99,7 +104,9 @@ def load_named_server_configs_from_file(
                 excluded_tools[name] = excluded_tool_patterns
                 logger.info(
                     "Named server '%s' configured with %d excluded tool patterns: %s",
-                    name, len(excluded_tool_patterns), excluded_tool_patterns
+                    name,
+                    len(excluded_tool_patterns),
+                    excluded_tool_patterns,
                 )
 
         # Validate required_groups format
@@ -116,7 +123,9 @@ def load_named_server_configs_from_file(
                 required_groups[name] = required_group_patterns
                 logger.info(
                     "Named server '%s' configured with %d required groups: %s",
-                    name, len(required_group_patterns), required_group_patterns
+                    name,
+                    len(required_group_patterns),
+                    required_group_patterns,
                 )
 
         # Handle different transport types
@@ -129,7 +138,7 @@ def load_named_server_configs_from_file(
                     name,
                 )
                 continue
-            
+
             headers = server_config.get("headers", {})
             if not isinstance(headers, dict):
                 logger.warning(
@@ -137,7 +146,7 @@ def load_named_server_configs_from_file(
                     name,
                 )
                 headers = {}
-                
+
             named_server_params[name] = HttpServerParameters(
                 url=url,
                 headers=headers,
@@ -147,7 +156,7 @@ def load_named_server_configs_from_file(
                 name,
                 url,
             )
-            
+
         else:
             # STDIO transport configuration (default)
             command = server_config.get("command")

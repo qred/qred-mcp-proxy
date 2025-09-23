@@ -19,11 +19,11 @@ export interface Props extends cdk.StackProps {
   // Existing resources configuration (for shared environments in the same account)
   existingResources?: {
     clusterName?: string;                 // Use existing ECS cluster instead of creating new one
-    internalLoadBalancerArn?: string;     // Use existing internal load balancer instead of creating new one  
+    internalLoadBalancerArn?: string;     // Use existing internal load balancer instead of creating new one
     externalLoadBalancerArn?: string;     // Use existing external load balancer instead of creating new one
     internalLoadBalancerSecurityGroupId?: string; // Security group ID of the existing internal load balancer
     externalLoadBalancerSecurityGroupId?: string; // Security group ID of the existing external load balancer
-    // Note: When using existing load balancers, the parent stack that owns them 
+    // Note: When using existing load balancers, the parent stack that owns them
     // should handle any additional ports, security groups, or listeners needed
   };
 }
@@ -54,9 +54,9 @@ export class MCPProxyPersistentStack extends cdk.Stack {
     }
 
     this.serviceName = this.stackName;
-    
+
     // DNS configuration is optional - only create zone lookup and records if DNS config is provided
-    const zone = props.hostedZoneId && props.zoneName ? 
+    const zone = props.hostedZoneId && props.zoneName ?
       route53.HostedZone.fromHostedZoneAttributes(this, 'HostedZone', {
         hostedZoneId: props.hostedZoneId,
         zoneName: props.zoneName
@@ -65,9 +65,9 @@ export class MCPProxyPersistentStack extends cdk.Stack {
     // persistent
     this.cluster = this.getCluster(this.serviceName, props.existingResources?.clusterName);
     this.loadBalancers = this.getLoadBalancers(
-      this.serviceName, 
-      props.enableExternalLoadBalancer, 
-      props.internalNetworks, 
+      this.serviceName,
+      props.enableExternalLoadBalancer,
+      props.internalNetworks,
       props.loadBalancerPorts,
       props.servicePort,
       props.existingResources
@@ -88,7 +88,7 @@ export class MCPProxyPersistentStack extends cdk.Stack {
         // DNS Records for internal domain (only if we created the internal LB and have DNS config)
         this.getRoute53ARecord(`internal-lb`, `${this.serviceName}.${zone.zoneName}`, zone, this.loadBalancers.internalLoadBalancer);
       }
-      
+
       // DNS Records for external domain (only if we created the external LB, it's enabled, and we have DNS config)
       if (this.loadBalancers.externalLoadBalancer && !props.existingResources?.externalLoadBalancerArn) {
         this.getRoute53ARecord(`external-lb`, `${this.serviceName}-ext.${zone.zoneName}`, zone, this.loadBalancers.externalLoadBalancer);
@@ -104,7 +104,7 @@ export class MCPProxyPersistentStack extends cdk.Stack {
         vpc: this.vpc,
       });
     }
-    
+
     // Create new cluster
     return new ecs.Cluster(this, 'Cluster', {
       clusterName: name,
@@ -112,11 +112,11 @@ export class MCPProxyPersistentStack extends cdk.Stack {
       containerInsightsV2: ecs.ContainerInsights.ENABLED,
     });
   }
-  
+
   private getLoadBalancers(
-    id: string, 
-    enableExternalLoadBalancer?: boolean, 
-    internalNetworks?: string[], 
+    id: string,
+    enableExternalLoadBalancer?: boolean,
+    internalNetworks?: string[],
     loadBalancerPorts?: number[],
     servicePort?: number,
     existingResources?: {
@@ -129,23 +129,23 @@ export class MCPProxyPersistentStack extends cdk.Stack {
   ) {
     const port = servicePort || 443; // Default to 443 if not specified
     const allPorts = loadBalancerPorts || [port]; // Use loadBalancerPorts if specified, otherwise just the service port
-    
+
     // Require explicit configuration of internal networks for security (only for new load balancers)
     if (!existingResources?.internalLoadBalancerArn && (!internalNetworks || internalNetworks.length === 0)) {
       throw new Error('internalNetworks must be explicitly configured in cdk.json for security when creating new load balancers. Example: ["10.0.0.0/16"] for VPC-only access.');
     }
-    
+
     // Handle Internal Load Balancer
     let internalLoadBalancer: elbv2.IApplicationLoadBalancer;
     let securityGroupInternalLb: ec2.ISecurityGroup;
-    
+
     if (existingResources?.internalLoadBalancerArn) {
       // Use existing internal load balancer AS-IS - do not modify it
       internalLoadBalancer = elbv2.ApplicationLoadBalancer.fromApplicationLoadBalancerAttributes(this, 'ExistingInternalLoadBalancer', {
         loadBalancerArn: existingResources.internalLoadBalancerArn,
         securityGroupId: existingResources.internalLoadBalancerSecurityGroupId || '', // Import existing security group if provided
       });
-      
+
       // Import the existing security group instead of creating a dummy one
       if (existingResources.internalLoadBalancerSecurityGroupId) {
         securityGroupInternalLb = ec2.SecurityGroup.fromSecurityGroupId(this, 'ExistingInternalSecurityGroup', existingResources.internalLoadBalancerSecurityGroupId);
@@ -156,13 +156,13 @@ export class MCPProxyPersistentStack extends cdk.Stack {
     } else {
       // Create new internal load balancer with proper security configuration
       securityGroupInternalLb = getSecurityGroup(this, this.vpc, this.serviceName, 'internal-lb-sg');
-      
+
       // Add rules for each configured internal network and all specified load balancer ports
       internalNetworks!.forEach((cidr, index) => {
         allPorts.forEach((portNum) => {
           securityGroupInternalLb.connections.allowFrom(
-            ec2.Peer.ipv4(cidr), 
-            ec2.Port.tcp(portNum), 
+            ec2.Peer.ipv4(cidr),
+            ec2.Port.tcp(portNum),
             `Internal network ${index + 1} - Port ${portNum}`
           );
         });
@@ -187,7 +187,7 @@ export class MCPProxyPersistentStack extends cdk.Stack {
           loadBalancerArn: existingResources.externalLoadBalancerArn,
           securityGroupId: existingResources.externalLoadBalancerSecurityGroupId || '', // Import existing security group if provided
         });
-        
+
         // Import the existing security group instead of creating a dummy one
         if (existingResources.externalLoadBalancerSecurityGroupId) {
           securityGroupExternalLb = ec2.SecurityGroup.fromSecurityGroupId(this, 'ExistingExternalSecurityGroup', existingResources.externalLoadBalancerSecurityGroupId);
@@ -198,21 +198,21 @@ export class MCPProxyPersistentStack extends cdk.Stack {
       } else {
         // Create new external load balancer with proper security configuration
         securityGroupExternalLb = getSecurityGroup(this, this.vpc, this.serviceName, 'external-lb-sg');
-        
+
         // Anthropic Claude outbound IP addresses
         const anthropicIPs = [
           '34.162.46.92/32',
-          '34.162.102.82/32', 
+          '34.162.102.82/32',
           '34.162.136.91/32',
           '34.162.142.92/32',
           '34.162.183.95/32'
         ];
-        
+
         anthropicIPs.forEach((ip, index) => {
           allPorts.forEach((portNum) => {
             securityGroupExternalLb!.connections.allowFrom(
-              ec2.Peer.ipv4(ip), 
-              ec2.Port.tcp(portNum), 
+              ec2.Peer.ipv4(ip),
+              ec2.Port.tcp(portNum),
               `Anthropic outbound IP ${index + 1} - Port ${portNum}`
             );
           });
@@ -229,7 +229,7 @@ export class MCPProxyPersistentStack extends cdk.Stack {
 
     return {internalLoadBalancer, externalLoadBalancer, securityGroupInternalLb, securityGroupExternalLb}
   }
-  
+
   private getRoute53ARecord(id: string, domainName: string, zone: route53.IHostedZone, loadBalancer: elbv2.IApplicationLoadBalancer) {
     return new route53.ARecord(this, `AliasRecord${generateLogicId(id)}`, {
       target: route53.RecordTarget.fromAlias(new route53_targets.LoadBalancerTarget(loadBalancer)),

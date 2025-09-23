@@ -36,7 +36,7 @@
       ]
     },
 
-    // PostHog server - Requires posthogSecretArn in cdk.json  
+    // PostHog server - Requires posthogSecretArn in cdk.json
     // Provides product analytics and feature flags
     "posthog": {
       "disabled": false,

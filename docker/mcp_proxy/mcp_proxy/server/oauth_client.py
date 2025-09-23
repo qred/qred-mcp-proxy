@@ -7,6 +7,7 @@ from typing import Optional, NamedTuple
 
 class ValidationResult(NamedTuple):
     """Result of token validation from OAuth sidecar."""
+
     is_valid: bool
     client_id: Optional[str] = None
     user_email: Optional[str] = None
@@ -16,11 +17,11 @@ class ValidationResult(NamedTuple):
 
 class OAuthSidecarClient:
     """Client for communicating with OAuth sidecar service."""
-    
+
     def __init__(self, oauth_service_url: Optional[str] = None):
         """
         Initialize OAuth sidecar client.
-        
+
         Args:
             oauth_service_url: Base URL of the OAuth sidecar service.
                               Defaults to OAUTH_SERVICE_URL env var or http://localhost:8001
@@ -29,25 +30,23 @@ class OAuthSidecarClient:
             "OAUTH_SERVICE_URL", "http://localhost:8001"
         )
         self.validate_url = f"{self.oauth_service_url}/validate"
-    
+
     async def validate_token(self, token: str) -> ValidationResult:
         """
         Validate OAuth token using the sidecar service.
-        
+
         Args:
             token: OAuth access token to validate
-            
+
         Returns:
             ValidationResult with validation status and details
         """
         try:
             async with httpx.AsyncClient() as client:
                 response = await client.post(
-                    self.validate_url,
-                    json={"token": token},
-                    timeout=10.0
+                    self.validate_url, json={"token": token}, timeout=10.0
                 )
-                
+
                 if response.status_code == 200:
                     data = response.json()
                     return ValidationResult(
@@ -55,23 +54,21 @@ class OAuthSidecarClient:
                         client_id=data.get("client_id"),
                         user_email=data.get("user_email"),
                         user_name=data.get("user_name"),
-                        error=data.get("error")
+                        error=data.get("error"),
                     )
                 else:
                     return ValidationResult(
                         is_valid=False,
-                        error=f"OAuth service returned {response.status_code}: {response.text}"
+                        error=f"OAuth service returned {response.status_code}: {response.text}",
                     )
-                    
+
         except httpx.RequestError as e:
             return ValidationResult(
-                is_valid=False,
-                error=f"Failed to connect to OAuth service: {str(e)}"
+                is_valid=False, error=f"Failed to connect to OAuth service: {str(e)}"
             )
         except Exception as e:
             return ValidationResult(
-                is_valid=False,
-                error=f"Token validation error: {str(e)}"
+                is_valid=False, error=f"Token validation error: {str(e)}"
             )
 
 
@@ -90,10 +87,10 @@ def get_oauth_client() -> OAuthSidecarClient:
 async def validate_request_user(token: str) -> ValidationResult:
     """
     Validate user token via OAuth sidecar.
-    
+
     Args:
         token: OAuth access token
-        
+
     Returns:
         ValidationResult with validation status
     """

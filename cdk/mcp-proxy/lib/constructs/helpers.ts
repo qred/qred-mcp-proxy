@@ -41,7 +41,7 @@ export function getSecurityGroup(
 
 export function getListener(
   scope: Construct,
-  id: string, 
+  id: string,
   cert: acm.ICertificate,
   loadbalancer: elbv2.IApplicationLoadBalancer, // Changed to interface to support both new and existing LBs
   port: number = 443,

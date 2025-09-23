@@ -34,10 +34,10 @@ export class MCPProxyStack extends cdk.Stack {
     const logRetention = logs.RetentionDays.THREE_MONTHS;
     const taskDefinition = getTaskDefinition(this, serviceName, logRetention, props );
     setupVolumes(taskDefinition);
-    
+
     // Create listeners for simplified single-port service
     const internalListener = getListener(this, 'int', cert, props.loadBalancers.internalLoadBalancer, servicePort );
-    
+
     // Create target groups for both MCP proxy and OAuth services
     const mcpProxyTargetGroup = getTargetGroup(this, 'proxy', serviceName, this.vpc, 8096, '/status', 8096);
     const oauthTargetGroup = getTargetGroup(this, 'auth', serviceName, this.vpc, 8001, '/health', 8001);
@@ -52,7 +52,7 @@ export class MCPProxyStack extends cdk.Stack {
       ],
       priority: 10
     });
-    
+
     internalListener.addTargetGroups('OAuthRule', {
       targetGroups: [oauthTargetGroup],
       conditions: [
@@ -71,7 +71,7 @@ export class MCPProxyStack extends cdk.Stack {
       const externalListener = getListener(this, 'ext', cert, props.loadBalancers.externalLoadBalancer, servicePort );
       const mcpProxyExtTargetGroup = getTargetGroup(this, 'proxy-ext', serviceName, this.vpc, 8096, '/status', 8096);
       const oauthExtTargetGroup = getTargetGroup(this, 'oauth-ext', serviceName, this.vpc, 8001, '/health', 8001);
-      
+
       externalListener.addTargetGroups('ExternalProxyRule', {
         targetGroups: [mcpProxyExtTargetGroup],
         conditions: [
@@ -79,7 +79,7 @@ export class MCPProxyStack extends cdk.Stack {
         ],
         priority: 10
       });
-      
+
       externalListener.addTargetGroups('ExternalOAuthRule', {
         targetGroups: [oauthExtTargetGroup],
         conditions: [
@@ -96,19 +96,19 @@ export class MCPProxyStack extends cdk.Stack {
 
     // Create the service with pre-created target groups
     const service = getSimpleFargateService(
-      this, 
-      `${serviceName}`, 
-      this.vpc, 
-      props.cluster, 
-      taskDefinition, 
+      this,
+      `${serviceName}`,
+      this.vpc,
+      props.cluster,
+      taskDefinition,
       props.desiredCount,
       targetGroupAttachments
     );
-    
+
     // Allow traffic to both MCP proxy and OAuth services
     service.connections.allowFrom(props.loadBalancers.securityGroupInternalLb, ec2.Port.tcp(8096), 'Internal LB to MCP Proxy');
     service.connections.allowFrom(props.loadBalancers.securityGroupInternalLb, ec2.Port.tcp(8001), 'Internal LB to OAuth Service');
-    
+
     // Conditionally allow external traffic if external load balancer is enabled
     if (props.loadBalancers.securityGroupExternalLb) {
       service.connections.allowFrom(props.loadBalancers.securityGroupExternalLb, ec2.Port.tcp(8096), 'External LB to MCP Proxy');

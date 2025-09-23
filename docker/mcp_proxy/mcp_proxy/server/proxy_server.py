@@ -11,7 +11,9 @@ from mcp.client.session import ClientSession
 from ..utils.logger import logger
 
 
-async def create_proxy_server(remote_app: ClientSession) -> server.Server[object]:  # noqa: C901, PLR0915
+async def create_proxy_server(
+    remote_app: ClientSession,
+) -> server.Server[object]:  # noqa: C901, PLR0915
     """Create a server instance from a remote app."""
     logger.debug("Sending initialization request to remote MCP server...")
     response = await remote_app.initialize()
@@ -44,11 +46,15 @@ async def create_proxy_server(remote_app: ClientSession) -> server.Server[object
 
         app.request_handlers[types.ListResourcesRequest] = _list_resources
 
-        async def _list_resource_templates(_: t.Any) -> types.ServerResult:  # noqa: ANN401
+        async def _list_resource_templates(
+            _: t.Any,
+        ) -> types.ServerResult:  # noqa: ANN401
             result = await remote_app.list_resource_templates()
             return types.ServerResult(result)
 
-        app.request_handlers[types.ListResourceTemplatesRequest] = _list_resource_templates
+        app.request_handlers[types.ListResourceTemplatesRequest] = (
+            _list_resource_templates
+        )
 
         async def _read_resource(req: types.ReadResourceRequest) -> types.ServerResult:
             result = await remote_app.read_resource(req.params.uri)
@@ -63,74 +69,95 @@ async def create_proxy_server(remote_app: ClientSession) -> server.Server[object
             def _validate_log_level(level: str) -> str:
                 """Validate log level according to MCP specification (RFC 5424)."""
                 valid_levels = {
-                    "debug", "info", "notice", "warning", 
-                    "error", "critical", "alert", "emergency"
+                    "debug",
+                    "info",
+                    "notice",
+                    "warning",
+                    "error",
+                    "critical",
+                    "alert",
+                    "emergency",
                 }
-                
+
                 # Case-sensitive validation per MCP spec
                 if level not in valid_levels:
                     raise McpError(
                         types.ErrorData(
                             code=types.INVALID_PARAMS,
-                            message=f"Invalid log level: {level}. Valid levels: {sorted(valid_levels)}"
+                            message=f"Invalid log level: {level}. Valid levels: {sorted(valid_levels)}",
                         )
                     )
                 return level
-            
+
             try:
                 # Gracefully handle requests during session initialization
                 logger.debug("SetLevelRequest received - processing gracefully")
-                
+
                 # Validate request structure before processing
-                if not hasattr(req, 'params'):
-                    logger.debug("SetLevelRequest missing 'params' attribute - returning error per MCP spec")
+                if not hasattr(req, "params"):
+                    logger.debug(
+                        "SetLevelRequest missing 'params' attribute - returning error per MCP spec"
+                    )
                     raise McpError(
                         types.ErrorData(
                             code=types.INVALID_PARAMS,
-                            message="SetLevelRequest missing required 'params' field"
+                            message="SetLevelRequest missing required 'params' field",
                         )
                     )
-                
-                if not hasattr(req.params, 'level'):
-                    logger.debug("SetLevelRequest.params missing 'level' attribute - returning error per MCP spec")
+
+                if not hasattr(req.params, "level"):
+                    logger.debug(
+                        "SetLevelRequest.params missing 'level' attribute - returning error per MCP spec"
+                    )
                     raise McpError(
                         types.ErrorData(
                             code=types.INVALID_PARAMS,
-                            message="SetLevelRequest missing required 'level' field"
+                            message="SetLevelRequest missing required 'level' field",
                         )
                     )
-                
+
                 # Additional validation: check if level is None
                 if req.params.level is None:
-                    logger.debug("SetLevelRequest.params.level is None - returning error per MCP spec")
+                    logger.debug(
+                        "SetLevelRequest.params.level is None - returning error per MCP spec"
+                    )
                     raise McpError(
                         types.ErrorData(
                             code=types.INVALID_PARAMS,
-                            message="SetLevelRequest 'level' field cannot be null"
+                            message="SetLevelRequest 'level' field cannot be null",
                         )
                     )
-                
+
                 # Validate log level according to MCP spec
                 level_str = _validate_log_level(req.params.level)
-                
+
                 logger.debug("Setting logging level to: %s", level_str)
-                await remote_app.set_logging_level(req.params.level)  # Use original level for backend call
+                await remote_app.set_logging_level(
+                    req.params.level
+                )  # Use original level for backend call
                 return types.ServerResult(types.EmptyResult())
-                
+
             except McpError:
                 # Re-raise MCP validation errors
                 raise
-                
+
             except Exception as e:
                 # Log more specific error information for debugging
                 error_str = str(e)
-                if ("Missing handler for request type: logging/setLevel" in error_str or
-                    ("HTTP 500" in error_str and "logging/setLevel" in error_str) or
-                    ("Failed to handle request" in error_str and "logging/setLevel" in error_str)):
-                    logger.warning("Backend doesn't implement setLevel handler despite claiming logging support")
+                if (
+                    "Missing handler for request type: logging/setLevel" in error_str
+                    or ("HTTP 500" in error_str and "logging/setLevel" in error_str)
+                    or (
+                        "Failed to handle request" in error_str
+                        and "logging/setLevel" in error_str
+                    )
+                ):
+                    logger.warning(
+                        "Backend doesn't implement setLevel handler despite claiming logging support"
+                    )
                 else:
                     logger.debug("SetLevelRequest failed: %s", e)
-                
+
                 # Always return success to avoid client errors during backend communication issues
                 logger.debug("Returning success to prevent client connection issues")
                 return types.ServerResult(types.EmptyResult())
@@ -140,13 +167,17 @@ async def create_proxy_server(remote_app: ClientSession) -> server.Server[object
     if capabilities.resources:
         logger.debug("Capabilities: adding Resources...")
 
-        async def _subscribe_resource(req: types.SubscribeRequest) -> types.ServerResult:
+        async def _subscribe_resource(
+            req: types.SubscribeRequest,
+        ) -> types.ServerResult:
             await remote_app.subscribe_resource(req.params.uri)
             return types.ServerResult(types.EmptyResult())
 
         app.request_handlers[types.SubscribeRequest] = _subscribe_resource
 
-        async def _unsubscribe_resource(req: types.UnsubscribeRequest) -> types.ServerResult:
+        async def _unsubscribe_resource(
+            req: types.UnsubscribeRequest,
+        ) -> types.ServerResult:
             await remote_app.unsubscribe_resource(req.params.uri)
             return types.ServerResult(types.EmptyResult())
 

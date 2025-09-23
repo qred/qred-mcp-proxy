@@ -68,7 +68,7 @@ The stack supports multiple environments with environment-specific configuration
 # Default environment
 npm run cdk deploy
 
-# Development environment  
+# Development environment
 CONFIG_ENV=development npm run cdk deploy
 
 # Production environment
@@ -104,7 +104,7 @@ The stack uses `cdk.json` for environment-specific configuration:
       },
       "production": {
         "serviceName": "mcp-proxy",
-        "account": "987654321098", 
+        "account": "987654321098",
         "region": "us-east-1",
         "desiredCount": 3,
         "tags": {
@@ -163,7 +163,7 @@ The MCP Proxy supports multiple optional MCP servers that can be enabled by prov
 
 ### Optional MCP Servers
 - **Grafana**: Enable by providing `grafanaSecretArn` - adds Grafana observability tools
-- **PostHog**: Enable by providing `posthogSecretArn` - adds product analytics tools  
+- **PostHog**: Enable by providing `posthogSecretArn` - adds product analytics tools
 - **OpenMetadata**: Enable by providing `openmetadataSecretArn` - adds data catalog tools
 
 ### Load Balancer Configuration
@@ -343,7 +343,7 @@ Deploy to different environments with isolated resources:
 # Deploy development environment
 CONFIG_ENV=development npm run cdk deploy
 
-# Deploy production environment  
+# Deploy production environment
 CONFIG_ENV=production npm run cdk deploy
 ```
 

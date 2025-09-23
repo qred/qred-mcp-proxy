@@ -1,13 +1,13 @@
 {
   // MCP Proxy CDK Configuration
-  // 
+  //
   // This file demonstrates all available configuration options for the MCP Proxy CDK deployment.
   // Copy this file to cdk.json and modify the values for your environment.
   //
   // KEY CONFIGURATION NOTES:
-  // 
+  //
   // 1. DNS Configuration (OPTIONAL):
-  //    - If both "hostedZoneId" and "zoneName" are provided in the dns section, 
+  //    - If both "hostedZoneId" and "zoneName" are provided in the dns section,
   //      Route53 A records will be automatically created pointing to the load balancers
   //    - If dns section is omitted or incomplete, no DNS records will be created
   //    - This is useful for external DNS management or when using existing load balancers
@@ -32,7 +32,7 @@
   //    - When using existing load balancers, this stack will not modify them
   //    - DNS records are not created when using existing load balancers
   //    - The parent stack managing existing resources should handle DNS and additional configurations
-  
+
   "app": "npx ts-node --prefer-ts-exts bin/mcp-proxy.ts",
   "watch": {
     "include": [
@@ -96,7 +96,7 @@
     // Environment-specific configuration
     // Define multiple environments in the same account with different settings
     "environments": {
-      
+
       // Default environment - used when CONFIG_ENV is not specified
       "default": {
         // Basic configuration
@@ -115,30 +115,30 @@
         "loadBalancerPorts": [443, 8443, 9443],                         // Ports to configure on load balancer listeners (for shared infrastructure)
         "servicePort": 443,                                              // Port for this specific service instance (default: 443)
         "internalNetworks": ["10.0.0.0/16", "192.168.1.0/24"],          // CIDR blocks allowed to access internal load balancer (required for security)
-        
+
         // Tags applied to all resources
         "tags": {
           "team": "platform",
           "costCenter": "platform"
         },
-        
+
         // CDK asset configuration
         "assets": {
           "bucketName": "mcp-proxy-123456789012-eu-west-1-assets",  // S3 bucket for CDK assets (must be literal)
           "bucketPrefix": "mcp-proxy/"                              // S3 prefix for organizing assets
         },
-        
+
         // VPC configuration - specify existing VPC to use
         "vpc": {
           "vpcId": "vpc-xxxxxxxxx"            // Existing VPC ID where resources will be deployed
         },
-        
+
         // DNS configuration for custom domains (OPTIONAL)
-        // 
+        //
         // DNS Behavior:
         // - Both hostedZoneId AND zoneName must be provided to enable DNS record creation
         // - If enabled, creates A records: <serviceName>.<zoneName> → internal load balancer
-        // - If external LB enabled, creates: <serviceName>-ext.<zoneName> → external load balancer  
+        // - If external LB enabled, creates: <serviceName>-ext.<zoneName> → external load balancer
         // - If using existing load balancers, DNS records are NOT created (managed by parent stack)
         // - If omitted completely, no DNS records are created (useful for external DNS management)
         //
@@ -150,23 +150,23 @@
           "hostedZoneId": "Z03108621XXXXXXXXXX",  // Route53 hosted zone ID (required if using DNS)
           "zoneName": "example.com"               // Domain name for the hosted zone (required if using DNS)
         },
-        
+
         // SSL/TLS certificate configuration
         "certificates": {
           "certificateArn": "arn:aws:acm:eu-west-1:123456789012:certificate/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"        // ACM certificate for Application Load Balancer
         },
-        
+
         // Container registry configuration
         "ecr": {
           "mcpProxyRepositoryArn": "arn:aws:ecr:eu-west-1:123456789012:repository/mcp-proxy",    // ECR repo for mcp-proxy container
           "mcpOauthRepositoryArn": "arn:aws:ecr:eu-west-1:123456789012:repository/mcp-oauth",    // ECR repo for mcp-oauth container
           "imageTag": "latest"                                                                     // Optional: override with specific image tag
         },
-        
+
         // KMS encryption configuration (OPTIONAL)
         //
         // IMPORTANT: This stack does NOT create KMS keys - you must create them externally
-        // 
+        //
         // KMS Key Requirements:
         // - Key must be created outside this stack (manually, via separate stack, or existing key)
         // - Deploying IAM role must have kms:Encrypt, kms:Decrypt, kms:ReEncrypt*, kms:GenerateDataKey*, kms:DescribeKey permissions
@@ -175,27 +175,27 @@
         //
         // Use Cases:
         // - Encrypt ECS task environment variables
-        // - Encrypt application logs and data  
+        // - Encrypt application logs and data
         // - Meet compliance requirements for data encryption
         //
         // If omitted: AWS managed keys will be used where encryption is required
         "kms": {
           "keyArn": "arn:aws:kms:eu-west-1:123456789012:key/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"  // ARN of existing KMS key for encryption
         },
-        
+
         // AWS Secrets Manager configuration for sensitive data
         "secrets": {
           // Required secrets for basic functionality
           "googleWifSecretArn": "arn:aws:secretsmanager:eu-west-1:123456789012:secret:mcp-proxy/googleWIF-xxxxxx",      // Google Workload Identity Federation (required)
           "googleOauthSecretArn": "arn:aws:secretsmanager:eu-west-1:123456789012:secret:mcp-proxy/googleOAuth-xxxxxx",  // Google OAuth credentials (required)
-          
+
           // Optional MCP server secrets - remove or comment out if not needed
           "grafanaSecretArn": "arn:aws:secretsmanager:eu-west-1:123456789012:secret:mcp-proxy/grafana-xxxxxx",          // Grafana API credentials (optional - enables Grafana MCP server)
-          "posthogSecretArn": "arn:aws:secretsmanager:eu-west-1:123456789012:secret:mcp-proxy/posthog-xxxxxx",          // PostHog API credentials (optional - enables PostHog MCP server) 
+          "posthogSecretArn": "arn:aws:secretsmanager:eu-west-1:123456789012:secret:mcp-proxy/posthog-xxxxxx",          // PostHog API credentials (optional - enables PostHog MCP server)
           "openmetadataSecretArn": "arn:aws:secretsmanager:eu-west-1:123456789012:secret:mcp-proxy/openmetadata-xxxxxx" // OpenMetadata API credentials (optional - enables OpenMetadata MCP server)
         }
       },
-      
+
       // Production environment example
       "production": {
         "serviceName": "mcp-proxy",
@@ -210,34 +210,34 @@
         "forceHttpsDomains": "prod-api.yourcompany.com,mcp.yourcompany.com", // Production domains that force HTTPS
         "grafanaUrl": "https://your-production-grafana.url",              // Production Grafana instance URL
         "internalNetworks": ["10.1.0.0/16"],                           // Production VPC CIDR - more restrictive than default
-        
+
         "tags": {
           "team": "platform",
           "costCenter": "platform",
           "environment": "production"
         }
-        
+
         // Example configuration and comments...
         // (Add similar detailed configuration as default environment)
       },
-      
+
       // Example: Using existing resources (shared development environment)
       // This approach is useful when you want multiple environments in the same account
       // sharing infrastructure but with different service configurations
       "shared-dev": {
         "serviceName": "mcp-proxy-dev1",      // Different service name for unique resources
         "account": "123456789012",
-        "region": "eu-west-1", 
+        "region": "eu-west-1",
         "desiredCount": 1,
         "saEmail": "dev-sa@your-gcp-project.iam.gserviceaccount.com",
         "servicePort": 8443,                  // Use different port for this service instance
         "internalNetworks": ["10.0.0.0/16"], // VPC CIDR for access (only needed if creating new LBs)
-        
+
         // Use existing infrastructure for cost efficiency in shared environments
         // Note: When using existing load balancers, this stack will NOT modify them
         // The parent stack that owns the load balancer should configure all needed ports/listeners
         // and security groups before deploying dependent stacks
-        // 
+        //
         // Port Configuration Strategy:
         // - loadBalancerPorts: Configure these ports on the load balancer (done by parent stack)
         // - servicePort: This specific service will listen on this port (should be one of the loadBalancerPorts)
@@ -253,11 +253,11 @@
           // "externalLoadBalancerArn": "arn:aws:elasticloadbalancing:eu-west-1:123456789012:loadbalancer/app/shared-external-alb/9876543210987654", // Optional: existing external ALB
           // "externalLoadBalancerSecurityGroupId": "sg-0987654321fedcba0"       // Optional: security group ID of the existing external load balancer
         },
-        
+
         // Parent stack should have configured listeners for ports: 443, 8443, 9443
         // This instance uses port 8443 for its service
         // Other services in the same shared environment can use 443, 9443, etc.
-        
+
         // Configuration continues with same structure as other environments...
         "assets": {"bucketName": "shared-dev-assets", "bucketPrefix": "mcp-proxy-dev1/"},
         "vpc": {"vpcId": "vpc-xxxxxxxxx"},

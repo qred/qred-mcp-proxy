@@ -32,7 +32,7 @@ The MCP proxy implements **OAuth 2.1 discovery** following RFC 9728 (Protected R
 }
 ```
 
-#### 2. Authorization Server Metadata (RFC 8414)  
+#### 2. Authorization Server Metadata (RFC 8414)
 **Endpoint:** `/.well-known/oauth-authorization-server`
 
 **Dynamic Response:** Fetches and caches Google's live OpenID configuration from `https://accounts.google.com/.well-known/openid-configuration` (1-hour cache).
@@ -82,7 +82,7 @@ Content-Type: application/json
 
 #### Invalid/Expired Token
 ```http
-HTTP/1.1 401 Unauthorized  
+HTTP/1.1 401 Unauthorized
 WWW-Authenticate: Bearer realm="MCP Server", error="invalid_token", error_description="Token validation failed"
 Content-Type: application/json
 
@@ -95,7 +95,7 @@ Content-Type: application/json
 ## MCP Server Architecture
 The proxy server aggregates tools, resources, and prompts from configured backend servers:
 - **Tool Calls**: Routed to appropriate backends with comprehensive logging
-- **Resource Access**: Namespaced URIs for backend resource isolation  
+- **Resource Access**: Namespaced URIs for backend resource isolation
 - **Prompt Management**: Unified prompt interface across backends
 - **Authentication**: OAuth2 Bearer token validation with Google Workspace membership verification
 - **Discovery**: RFC-compliant OAuth 2.1 discovery endpoints for automatic client configuration
@@ -132,7 +132,7 @@ Add an `excluded_tools` array to any server configuration:
     "transportType": "stdio",
     "excluded_tools": [
       "sensitive_operation",
-      "admin_function", 
+      "admin_function",
       "*delete*",
       "update_*"
     ]
@@ -200,7 +200,7 @@ From the `docker/mcp_proxy/` directory:
 ```
 This script will:
 - Build the Docker image for the MCP Proxy
-- Tag the image with the current git commit hash  
+- Tag the image with the current git commit hash
 - Optionally push the image to AWS ECR (with `--deploy` flag)
 
 ### Local Testing
@@ -260,7 +260,7 @@ General server operations and user activities:
 ```
 /app/
 ├── auth/           # Authentication logs (read/write by proxy)
-├── keepalive/      # Backend health logs (read/write by proxy)  
+├── keepalive/      # Backend health logs (read/write by proxy)
 └── backend/        # Backend-specific data and logs (configurable)
 
 /logs/              # Log monitor container read-only access
@@ -279,7 +279,7 @@ Test the OAuth discovery implementation:
 curl -H "Accept: application/json" \
      https://your-mcp-proxy-domain.com/.well-known/oauth-protected-resource
 
-# Test Authorization Server Metadata  
+# Test Authorization Server Metadata
 curl -H "Accept: application/json" \
      https://your-mcp-proxy-domain.com/.well-known/oauth-authorization-server
 
@@ -334,7 +334,7 @@ The middleware automatically handles both `/mcp` and `/mcp/` paths - no manual r
 ## Development Notes
 
 - **Stateless Design**: Each request is independently authenticated and routed
-- **User Context**: Thread-local user context enables comprehensive logging across the request lifecycle  
+- **User Context**: Thread-local user context enables comprehensive logging across the request lifecycle
 - **Caching Strategy**: OAuth token validation cached for 5 minutes to reduce authentication overhead
 - **Error Handling**: Comprehensive error logging with user context for debugging
 

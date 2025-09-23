@@ -26,9 +26,9 @@ const persistentStack = new MCPProxyPersistentStack(app, `${envConfig.serviceNam
   description: 'MCP Proxy Persistent Resources',
   vpcId: envConfig.vpc.vpcId,
   // DNS configuration is optional - only pass if both hostedZoneId and zoneName are provided
-  ...(envConfig.dns?.hostedZoneId && envConfig.dns?.zoneName && { 
+  ...(envConfig.dns?.hostedZoneId && envConfig.dns?.zoneName && {
     hostedZoneId: envConfig.dns.hostedZoneId,
-    zoneName: envConfig.dns.zoneName 
+    zoneName: envConfig.dns.zoneName
   }),
   enableExternalLoadBalancer: envConfig.enableExternalLoadBalancer,
   internalNetworks: envConfig.internalNetworks,
