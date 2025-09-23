@@ -38,55 +38,49 @@ jobs:
         run: |
           uv sync --group test --group dev
 
-      - name: Run code quality checks
+      - name: Run pre-commit hooks
         run: |
-          echo "🔍 Running comprehensive code quality checks..."
+          echo "🔍 Running pre-commit hooks (same as local development)..."
+          echo ""
+          echo "This uses the exact same configuration as local development:"
+          echo "• 🔧 Ruff Linter - Fast Python linter (imports, style, errors, bugs)"
+          echo "• 🎨 Ruff Formatter - Consistent code formatting (88-character line length)"
+          echo "• 🔬 MyPy Type Checking - Static type analysis and type safety"
+          echo "• 🔒 Bandit Security Scanner - Security vulnerability detection"
+          echo "• ✂️ Trim Trailing Whitespace - Remove unnecessary whitespace"
+          echo "• 📄 Fix End of Files - Ensure files end with newlines"
+          echo "• 📋 Check YAML - Validate YAML syntax"
+          echo "• 🔍 Check JSON - Validate JSON syntax"
+          echo "• 🔀 Check Merge Conflicts - Detect unresolved merge conflict markers"
           echo ""
 
-          # Ruff - Fast Python linter (replaces flake8 + isort)
-          echo "🔧 Running Ruff linter checks..."
-          echo "   → Checking imports, code style, common errors, and potential bugs"
-          uv run ruff check ./docker
-          echo "   ✅ Ruff linting passed"
-          echo ""
+          # Run all pre-commit hooks
+          uv run pre-commit run --all-files
 
-          # Ruff formatter check
-          echo "🎨 Checking Ruff formatting..."
-          echo "   → Verifying consistent code style (88-character line length)"
-          uv run ruff format --check ./docker
-          echo "   ✅ Ruff formatting passed"
           echo ""
-
-          # MyPy - Static type checking
-          echo "🔬 Running MyPy type checking..."
-          echo "   → Analyzing type hints and catching type errors"
-          uv run mypy ./docker --ignore-missing-imports --show-error-codes --no-strict-optional
-          echo "   ✅ MyPy type checking passed"
-          echo ""
-
-          # Bandit - Security vulnerability scanner
-          echo "🔒 Running Bandit security checks..."
-          echo "   → Scanning for common security issues (excluding dependencies)"
-          uv run bandit -r ./docker -f json -o bandit-report.json --exclude "*/.venv/*,*/.venv/**" || true
-          uv run bandit -r ./docker --severity-level medium --exclude "*/.venv/*,*/.venv/**"
-          echo "   ✅ Bandit security checks passed"
-          echo ""
-
-          echo "🎉 All code quality checks completed successfully!"
+          echo "🎉 All pre-commit hooks completed successfully!"
 
       - name: Create Code Quality Summary
         run: |
           echo "## 🎯 Code Quality Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "All code quality checks have passed successfully! ✅" >> $GITHUB_STEP_SUMMARY
+          echo "All pre-commit hooks have passed successfully! ✅" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Tool | Purpose | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "**Configuration**: Uses `.pre-commit-config.yaml` (same as local development)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Hook | Purpose | Status |" >> $GITHUB_STEP_SUMMARY
           echo "|------|---------|--------|" >> $GITHUB_STEP_SUMMARY
           echo "| 🔧 **Ruff Linter** | Import organization, code style, error detection | ✅ Passed |" >> $GITHUB_STEP_SUMMARY
           echo "| 🎨 **Ruff Formatter** | Consistent code formatting (88-char line length) | ✅ Passed |" >> $GITHUB_STEP_SUMMARY
           echo "| 🔬 **MyPy** | Static type analysis and type safety | ✅ Passed |" >> $GITHUB_STEP_SUMMARY
           echo "| 🔒 **Bandit** | Security vulnerability scanning | ✅ Passed |" >> $GITHUB_STEP_SUMMARY
+          echo "| ✂️ **Trim Whitespace** | Remove trailing whitespace | ✅ Passed |" >> $GITHUB_STEP_SUMMARY
+          echo "| 📄 **Fix End of Files** | Ensure proper file endings | ✅ Passed |" >> $GITHUB_STEP_SUMMARY
+          echo "| 📋 **Check YAML** | Validate YAML syntax | ✅ Passed |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🔍 **Check JSON** | Validate JSON syntax | ✅ Passed |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🔀 **Check Merge Conflicts** | Detect unresolved conflicts | ✅ Passed |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
+          echo "🏆 **Total Quality Checks**: 9 hooks executed" >> $GITHUB_STEP_SUMMARY
 
       - name: Run OAuth server tests
         run: |
