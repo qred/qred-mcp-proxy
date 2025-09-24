@@ -1538,7 +1538,10 @@ async def oauth_token_proxy(request: Request) -> Response:
         logger.error("Token exchange request failed: %s", e)
         return JSONResponse(
             status_code=502,
-            content={"error": "token_exchange_failed", "error_description": str(e)},
+            content={
+                "error": "token_exchange_failed",
+                "error_description": "Unable to connect to OAuth provider",
+            },
         )
 
 
