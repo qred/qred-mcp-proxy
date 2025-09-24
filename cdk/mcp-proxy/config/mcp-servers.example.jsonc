@@ -1,0 +1,90 @@
+{
+  // Example MCP servers configuration showing all available optional servers
+  // Copy this to mcp-servers.json and uncomment/configure the servers you want to use
+  "_comment": "Complete example of all available MCP servers. Copy the sections you need to mcp-servers.json and configure according to your setup.",
+  "mcpServers": {
+    // Fetch server - Always available for web content retrieval
+    "fetch": {
+      "disabled": false,
+      "timeout": 60,
+      "command": "uvx",
+      "args": [
+        "mcp-server-fetch"
+      ],
+      "transportType": "stdio"
+    },
+
+    // Grafana server - Requires grafanaSecretArn in cdk.json
+    // Provides observability tools for dashboards, alerts, and metrics
+    "grafana": {
+      "disabled": false,
+      "timeout": 60,
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-remote",
+        "http://127.0.0.1:8000/mcp"
+      ],
+      "transportType": "stdio",
+      "excluded_tools": [
+        "list_teams",
+        "list_users_by_org",
+        "*loki*",
+        "*prometheus*",
+        "*sift*",
+        "*pyroscope*"
+      ]
+    },
+
+    // PostHog server - Requires posthogSecretArn in cdk.json
+    // Provides product analytics and feature flags
+    "posthog": {
+      "disabled": false,
+      "timeout": 60,
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-remote",
+        "https://mcp.posthog.com/mcp",
+        "--header",
+        "Authorization: Bearer ${POSTHOG_API_KEY}"
+      ],
+      "env": {
+        "POSTHOG_BASE_URL": "https://eu.posthog.com"
+      },
+      "required_groups": [
+        "your-required-group-posthog"
+      ],
+      "transportType": "stdio"
+    },
+
+    // OpenMetadata server - Requires openmetadataSecretArn in cdk.json
+    // Provides data catalog and metadata management
+    "openmetadata": {
+      "disabled": false,
+      "timeout": 60,
+      "command": "npx",
+      "args": [
+        "-y",
+        "mcp-remote",
+        "https://your-open-metadata-url/mcp",
+        "--auth-server-url=https://your-open-metadata-url/mcp",
+        "--client-id=openmetadata",
+        "--verbose",
+        "--clean",
+        "--header",
+        "Authorization: Bearer ${OPENMETADATA_JWT_TOKEN}"
+      ],
+      "transportType": "stdio",
+      "excluded_tools": [
+        "patch*"
+      ]
+    }
+
+    // To add a new MCP server:
+    // 1. Add the corresponding secret ARN to your cdk.json configuration
+    // 2. Update service.ts to conditionally create the container
+    // 3. Add the server configuration here
+    // 4. Update documentation with setup instructions
+  }
+}

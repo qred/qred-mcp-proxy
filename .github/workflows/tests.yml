@@ -1,0 +1,112 @@
+name: "Code Quality & Tests"
+
+on:
+  pull_request:
+    branches:
+        - main
+
+permissions:
+  contents: read
+
+jobs:
+  code-quality-and-tests:
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      checks: write
+      contents: write
+      pull-requests: write
+      id-token: write
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@e797f83bcb11b83ae66e0230d6156d7c80228e7c
+        with:
+          python-version: '3.13'
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@b75a909f75acd358c2196fb9a5f1299a9a8868a4
+        with:
+          version: "0.8.19"
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: |
+          uv sync --group test --group dev
+
+      - name: Run pre-commit hooks
+        run: |
+          echo "🔍 Running pre-commit hooks (same as local development)..."
+          echo ""
+          echo "This uses the exact same configuration as local development:"
+          echo "• 🔧 Ruff Linter - Fast Python linter (imports, style, errors, bugs, security)"
+          echo "• 🎨 Ruff Formatter - Consistent code formatting (88-character line length)"
+          echo "• 🔬 MyPy Type Checking - Static type analysis and type safety"
+          echo "• ✂️ Trim Trailing Whitespace - Remove unnecessary whitespace"
+          echo "• 📄 Fix End of Files - Ensure files end with newlines"
+          echo "• 📋 Check YAML - Validate YAML syntax"
+          echo "• 🔍 Check JSON - Validate JSON syntax"
+          echo "• 🔀 Check Merge Conflicts - Detect unresolved merge conflict markers"
+          echo ""
+
+          # Run all pre-commit hooks
+          uv run pre-commit run --all-files --hook-stage manual
+
+          echo ""
+          echo "🎉 All pre-commit hooks completed successfully!"
+
+      - name: Create Code Quality Summary
+        run: |
+          echo "## 🎯 Code Quality Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "All pre-commit hooks have passed successfully! ✅" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Configuration**: Uses \`.pre-commit-config.yaml\` (same as local development)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Hook | Purpose | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|------|---------|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| 🔧 **Ruff Linter** | Import organization, code style, error detection, security | ✅ Passed |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🎨 **Ruff Formatter** | Consistent code formatting (88-char line length) | ✅ Passed |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🔬 **MyPy** | Static type analysis and type safety | ✅ Passed |" >> $GITHUB_STEP_SUMMARY
+          echo "| ✂️ **Trim Whitespace** | Remove trailing whitespace | ✅ Passed |" >> $GITHUB_STEP_SUMMARY
+          echo "| 📄 **Fix End of Files** | Ensure proper file endings | ✅ Passed |" >> $GITHUB_STEP_SUMMARY
+          echo "| 📋 **Check YAML** | Validate YAML syntax | ✅ Passed |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🔍 **Check JSON** | Validate JSON syntax | ✅ Passed |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🔀 **Check Merge Conflicts** | Detect unresolved conflicts | ✅ Passed |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "🏆 **Total Quality Checks**: 8 hooks executed" >> $GITHUB_STEP_SUMMARY
+
+      - name: Run OAuth server tests
+        run: |
+          uv run python tests/run_tests.py --oauth --ctrf
+
+      - name: Run MCP proxy application tests
+        run: |
+          uv run python tests/run_tests.py --proxy --ctrf
+
+      - name: Publish Test Report
+        if: always()
+        uses: ctrf-io/github-test-reporter@646f98cfc16c6f7a0e1f6100cabe2deb95dd2eef
+        with:
+          report-path: './ctrf/*.json'
+          summary-report: true
+          github-report: true
+          failed-report: true
+          fail-rate-report: true
+          flaky-report: true
+          flaky-rate-report: true
+          failed-folded-report: true
+          insights-report: true
+          pull-request-report: true
+          pull-request: true
+          collapse-large-reports: true
+          overwrite-comment: true
+          suite-folded-report: true
+          use-suite-name: true
+          group-by: 'suite'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

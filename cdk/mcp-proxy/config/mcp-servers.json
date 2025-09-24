@@ -1,0 +1,14 @@
+{
+  "_comment": "Minimal MCP servers configuration. This basic setup only includes the fetch server for web content retrieval. For additional servers (Grafana, PostHog, OpenMetadata), see mcp-servers.example.jsonc for configuration examples.",
+  "mcpServers": {
+    "fetch": {
+      "disabled": false,
+      "timeout": 60,
+      "command": "uvx",
+      "args": [
+        "mcp-server-fetch"
+      ],
+      "transportType": "stdio"
+    }
+  }
+}

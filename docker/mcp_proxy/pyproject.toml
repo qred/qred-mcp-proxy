@@ -1,0 +1,85 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "mcp-proxy"
+version = "0.1.0"
+requires-python = ">=3.13"
+description = "QRED MCP Proxy server"
+readme = "mcp_proxy.md"
+authors = [
+    {name = "Qred", email = "team-eed-platform@qred.com"}
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Information Technology",
+    "Intended Audience :: System Administrators",
+    "Operating System :: MacOS",
+    "Operating System :: POSIX :: Linux",
+    "Operating System :: Unix",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Utilities",
+    "Typing :: Typed",
+]
+dependencies = [
+  "mcp==1.14.0",
+  "uvicorn==0.35.0",
+  "pydantic==2.11.7",
+  "requests==2.32.5",
+  "boto3==1.40.33",
+  "types-requests==2.32.4.20250809",
+  "starlette==0.48.0",
+  "uv==0.8.19",
+  "httpx==0.28.1"
+]
+
+[dependency-groups]
+dev = [
+    "pytest==8.4.1",
+    "pytest-asyncio==1.2.0",
+    "pytest-mock==3.15.1",
+    "pytest-cov==7.0.0",
+    "httpx==0.28.1",
+    "black==25.9.0",
+    "flake8==7.3.0",
+    "mypy==1.17.1",
+]
+test = [
+    "pytest==8.4.1",
+    "pytest-asyncio==1.2.0",
+    "pytest-mock==3.15.1",
+    "pytest-cov==7.0.0",
+    "httpx==0.28.1",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest==8.4.1",
+    "pytest-asyncio==1.2.0",
+    "pytest-mock==3.15.1",
+    "pytest-cov==7.0.0",
+    "httpx==0.28.1",
+]
+
+[project.scripts]
+mcp-proxy = "mcp_proxy.__main__:main"
+mcp-reverse-proxy = "mcp_proxy.__main__:client"
+
+[tool.hatch.build.targets.wheel]
+packages = ["."]
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+addopts = "-ra -q --strict-markers --strict-config"
+testpaths = ["tests"]
+asyncio_mode = "auto"
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]

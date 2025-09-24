@@ -1,0 +1,4 @@
+# Default reviewers for the MCP Proxy repository
+# These users will be automatically requested for review on all PRs
+
+* @qred/team-eed-platform @amojanchevskiQred @lezgin-zilan-qred

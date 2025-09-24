@@ -1,0 +1,54 @@
+# See https://pre-commit.com for more information
+# See https://pre-commit.com/hooks.html for more hooks
+repos:
+  # Ruff - Fast Python linter and formatter (replaces flake8, isort, Black)
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: a113f03edeabb71305f025e6e14bd2cd68660e29  # v0.13.1
+    hooks:
+      # Ruff linter with auto-fix (for local development)
+      - id: ruff
+        name: 🔧 Ruff Linter (with auto-fix)
+        description: "Fast Python linter with auto-fix (imports, style, errors, bugs, security)"
+        args: [--fix]
+        files: ^docker/.*\.py$
+        stages: [pre-commit]
+
+      # Ruff linter check-only (for CI and manual runs)
+      - id: ruff
+        alias: ruff-check
+        name: 🔍 Ruff Linter (check-only)
+        description: "Fast Python linter check-only mode (imports, style, errors, bugs, security)"
+        files: ^docker/.*\.py$
+        stages: [manual, pre-push]
+
+      # Ruff formatter
+      - id: ruff-format
+        name: 🎨 Ruff Formatter
+        description: "Consistent code formatting (88-character line length)"
+        files: ^docker/.*\.py$
+
+  # MyPy - Static type checking
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: 9f70dc58c23dfcca1b97af99eaeee3140a807c7e  # v1.18.2
+    hooks:
+      - id: mypy
+        name: 🔬 MyPy Type Checking
+        description: "Static type analysis and type safety"
+        files: ^docker/.*\.py$
+        args: [--ignore-missing-imports, --show-error-codes, --no-strict-optional]
+        additional_dependencies: [types-requests, types-urllib3]
+
+  # General file checks
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: a2cdab0afed18f1b2b073c3f7b68f109fd228d04  # v6.0.0+
+    hooks:
+      - id: trailing-whitespace
+        name: ✂️  Trim Trailing Whitespace
+      - id: end-of-file-fixer
+        name: 📄 Fix End of Files
+      - id: check-yaml
+        name: 📋 Check YAML
+      - id: check-json
+        name: 🔍 Check JSON
+      - id: check-merge-conflict
+        name: 🔀 Check Merge Conflicts
