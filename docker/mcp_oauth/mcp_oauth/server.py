@@ -10,6 +10,7 @@ from contextlib import asynccontextmanager
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlparse
 
 import httpx
 from fastapi import FastAPI, HTTPException, Request
@@ -37,13 +38,41 @@ def get_request_scheme(request: Request) -> str:
     For production deployment behind load balancer, detect HTTPS context
     based on configured domains.
     """
+    # Use proper hostname validation instead of substring check
+
+    parsed_url = urlparse(str(request.url))
+    hostname = parsed_url.hostname
+
+    if not hostname:
+        return str(request.url.scheme)
+
     # Check if any configured domains should force HTTPS
     should_force_https = any(
-        domain.strip() and domain.strip() in str(request.url.netloc)
+        domain.strip() and hostname.endswith(domain.strip())
         for domain in FORCE_HTTPS_DOMAINS
         if domain.strip()
     )
-    return "https" if should_force_https else request.url.scheme
+    return "https" if should_force_https else str(request.url.scheme)
+
+
+def is_production_domain(request: Request) -> bool:
+    """
+    Check if the request is from a production domain that should use HTTPS.
+
+    Uses proper hostname validation instead of substring checks.
+    """
+
+    parsed_url = urlparse(str(request.url))
+    hostname = parsed_url.hostname
+
+    if not hostname:
+        return False
+
+    return any(
+        domain.strip() and hostname.endswith(domain.strip())
+        for domain in FORCE_HTTPS_DOMAINS
+        if domain.strip()
+    )
 
 
 # DCR (Dynamic Client Registration) global variables - initialized during OAuth config loading
@@ -1508,7 +1537,10 @@ async def oauth_token_proxy(request: Request) -> Response:
         logger.error("Token exchange request failed: %s", e)
         return JSONResponse(
             status_code=502,
-            content={"error": "token_exchange_failed", "error_description": str(e)},
+            content={
+                "error": "token_exchange_failed",
+                "error_description": "Unable to connect to OAuth provider",
+            },
         )
 
 

@@ -3,6 +3,7 @@
 import json
 import os
 from unittest.mock import patch
+from urllib.parse import urlparse
 
 
 class TestAdvancedConfigurationUnit:
@@ -184,7 +185,10 @@ class TestAdvancedConfigurationUnit:
         assert wif_config["type"] == "external_account"
         assert "audience" in wif_config
         assert "subject_token_type" in wif_config
-        assert "iam.googleapis.com" in wif_config["audience"]
+        # Google WIF audience format: //iam.googleapis.com/projects/.../
+        audience_parsed = urlparse(wif_config["audience"])
+        assert audience_parsed.netloc == "iam.googleapis.com"
+        assert audience_parsed.path.startswith("/projects/")
 
     def test_missing_required_environment_variables_logic(self):
         """Test missing required environment variables handling logic."""

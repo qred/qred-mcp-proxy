@@ -5,6 +5,7 @@ import json
 import os
 from unittest.mock import Mock, patch, AsyncMock
 from fastapi.testclient import TestClient
+from urllib.parse import urlparse
 
 
 class TestOAuthIntegration:
@@ -117,7 +118,8 @@ class TestOAuthIntegration:
             # If we get a redirect, should redirect to Google OAuth
             if auth_response.status_code == 302:
                 location = auth_response.headers["location"]
-                assert "accounts.google.com" in location
+                parsed_url = urlparse(location)
+                assert parsed_url.hostname == "accounts.google.com"
         else:
             # If DCR fails due to configuration issues, that's acceptable for unit tests
             assert dcr_response.status_code in [500, 201]
