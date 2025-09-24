@@ -42,9 +42,9 @@ logging.getLogger("httpx").setLevel(logging.WARNING)
 FORCE_HTTPS_DOMAINS = os.getenv("FORCE_HTTPS_DOMAINS", "").split(",")
 
 
-def _is_production_domain(request: Request) -> bool:
+def _should_force_https(request: Request) -> bool:
     """
-    Check if the request is from a production domain that should use HTTPS.
+    Check if HTTPS should be forced for the request's domain.
 
     Uses proper hostname validation instead of substring checks.
     """
@@ -200,7 +200,7 @@ def create_single_instance_routes(
                 # Include WWW-Authenticate header as per RFC 6750 for OAuth discovery
                 base_url = (
                     f"https://{request.url.netloc}"
-                    if _is_production_domain(request)
+                    if _should_force_https(request)
                     else f"{request.url.scheme}://{request.url.netloc}"
                 )
 
@@ -343,7 +343,7 @@ def create_single_instance_routes(
                 # Include WWW-Authenticate header as per RFC 6750 for OAuth discovery
                 base_url = (
                     f"https://{request.url.netloc}"
-                    if _is_production_domain(request)
+                    if _should_force_https(request)
                     else f"{request.url.scheme}://{request.url.netloc}"
                 )
 
