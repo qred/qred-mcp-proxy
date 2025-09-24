@@ -2,6 +2,7 @@
 
 import contextlib
 import logging
+import os
 import time
 from collections.abc import AsyncIterator
 from dataclasses import dataclass
@@ -34,6 +35,31 @@ from .proxy_server import create_proxy_server
 
 # Configure httpx logging to prevent token leakage and reduce noise
 logging.getLogger("httpx").setLevel(logging.WARNING)
+
+# Configuration for HTTPS enforcement
+# Domains that should force HTTPS when behind load balancer
+FORCE_HTTPS_DOMAINS = os.getenv("FORCE_HTTPS_DOMAINS", "").split(",")
+
+
+def _is_production_domain(request: Request) -> bool:
+    """
+    Check if the request is from a production domain that should use HTTPS.
+
+    Uses proper hostname validation instead of substring checks.
+    """
+    from urllib.parse import urlparse
+
+    parsed_url = urlparse(str(request.url))
+    hostname = parsed_url.hostname
+
+    if not hostname:
+        return False
+
+    return any(
+        domain.strip() and hostname.endswith(domain.strip())
+        for domain in FORCE_HTTPS_DOMAINS
+        if domain.strip()
+    )
 
 
 def _extract_token_from_request(request: Request) -> str | None:
@@ -174,7 +200,7 @@ def create_single_instance_routes(
                 # Include WWW-Authenticate header as per RFC 6750 for OAuth discovery
                 base_url = (
                     f"https://{request.url.netloc}"
-                    if "tools.qred.com" in str(request.url.netloc)
+                    if _is_production_domain(request)
                     else f"{request.url.scheme}://{request.url.netloc}"
                 )
 
@@ -317,7 +343,7 @@ def create_single_instance_routes(
                 # Include WWW-Authenticate header as per RFC 6750 for OAuth discovery
                 base_url = (
                     f"https://{request.url.netloc}"
-                    if "tools.qred.com" in str(request.url.netloc)
+                    if _is_production_domain(request)
                     else f"{request.url.scheme}://{request.url.netloc}"
                 )
 
