@@ -3,6 +3,7 @@
 import json
 import os
 from unittest.mock import patch
+from urllib.parse import urlparse
 
 
 class TestAdvancedConfigurationUnit:
@@ -185,7 +186,6 @@ class TestAdvancedConfigurationUnit:
         assert "audience" in wif_config
         assert "subject_token_type" in wif_config
         # Google WIF audience format: //iam.googleapis.com/projects/.../
-        from urllib.parse import urlparse
         audience_parsed = urlparse(wif_config["audience"])
         assert audience_parsed.netloc == "iam.googleapis.com"
         assert audience_parsed.path.startswith("/projects/")

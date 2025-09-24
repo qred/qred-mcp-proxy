@@ -10,6 +10,7 @@ from contextlib import asynccontextmanager
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlparse
 
 import httpx
 from fastapi import FastAPI, HTTPException, Request
@@ -38,7 +39,6 @@ def get_request_scheme(request: Request) -> str:
     based on configured domains.
     """
     # Use proper hostname validation instead of substring check
-    from urllib.parse import urlparse
 
     parsed_url = urlparse(str(request.url))
     hostname = parsed_url.hostname
@@ -61,7 +61,6 @@ def is_production_domain(request: Request) -> bool:
 
     Uses proper hostname validation instead of substring checks.
     """
-    from urllib.parse import urlparse
 
     parsed_url = urlparse(str(request.url))
     hostname = parsed_url.hostname

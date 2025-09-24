@@ -5,6 +5,7 @@ import json
 import os
 from unittest.mock import Mock, patch, AsyncMock
 from fastapi.testclient import TestClient
+from urllib.parse import urlparse
 
 
 class TestOAuthIntegration:
@@ -116,7 +117,6 @@ class TestOAuthIntegration:
 
             # If we get a redirect, should redirect to Google OAuth
             if auth_response.status_code == 302:
-                from urllib.parse import urlparse
                 location = auth_response.headers["location"]
                 parsed_url = urlparse(location)
                 assert parsed_url.hostname == "accounts.google.com"

@@ -8,6 +8,7 @@ from collections.abc import AsyncIterator
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from typing import Any, Literal
+from urllib.parse import urlparse
 
 import uvicorn
 from mcp.client.session import ClientSession
@@ -47,7 +48,6 @@ def _is_production_domain(request: Request) -> bool:
 
     Uses proper hostname validation instead of substring checks.
     """
-    from urllib.parse import urlparse
 
     parsed_url = urlparse(str(request.url))
     hostname = parsed_url.hostname
