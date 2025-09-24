@@ -185,7 +185,10 @@ class TestAdvancedConfigurationUnit:
         assert "audience" in wif_config
         assert "subject_token_type" in wif_config
         # Google WIF audience format: //iam.googleapis.com/projects/.../
-        assert wif_config["audience"].startswith("//iam.googleapis.com/")
+        from urllib.parse import urlparse
+        audience_parsed = urlparse(wif_config["audience"])
+        assert audience_parsed.netloc == "iam.googleapis.com"
+        assert audience_parsed.path.startswith("/projects/")
 
     def test_missing_required_environment_variables_logic(self):
         """Test missing required environment variables handling logic."""
