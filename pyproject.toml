@@ -29,7 +29,7 @@ classifiers = [
     "Typing :: Typed",
 ]
 dependencies = [
-  "uv==0.8.19",
+  "uv==0.9.5",
   "pre-commit==4.3.0",  # Git hook management for automatic code quality checks
   "mcp-proxy",
   "mcp-oauth"
