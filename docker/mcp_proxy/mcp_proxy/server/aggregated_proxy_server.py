@@ -16,6 +16,7 @@ from mcp import server, types
 from mcp.client.session import ClientSession
 from mcp.shared.exceptions import McpError
 
+from ..middleware.pii_redaction import redact_tool_arguments, redact_tool_result
 from ..utils.logger import keepalive_logger, logger
 
 # Global store for keep-alive tasks (since we can't modify Server class)
@@ -1078,6 +1079,9 @@ async def _setup_aggregated_tools(
             # Prepare arguments and automatically inject authenticated user
             arguments = dict(req.params.arguments or {})
 
+            # EET-1302: redact PII from arguments before forwarding to backend
+            arguments, _ = redact_tool_arguments(arguments, actual_tool_name, backend_name)
+
             # Get the authenticated user from context
             user_email = get_user_context()
 
@@ -1131,6 +1135,10 @@ async def _setup_aggregated_tools(
             )
 
             result = await session.call_tool(actual_tool_name, arguments)
+
+            # EET-1302: redact PII from result before returning to Claude Code
+            result, _ = redact_tool_result(result, actual_tool_name, backend_name)
+
             return types.ServerResult(result)
 
         except Exception as e:

@@ -9,6 +9,7 @@ from mcp import server, types
 from mcp.client.session import ClientSession
 from mcp.shared.exceptions import McpError
 
+from ..middleware.pii_redaction import redact_tool_arguments, redact_tool_result
 from ..utils.logger import logger
 
 
@@ -195,10 +196,18 @@ async def create_proxy_server(
 
         async def _call_tool(req: types.CallToolRequest) -> types.ServerResult:
             try:
-                result = await remote_app.call_tool(
-                    req.params.name,
-                    (req.params.arguments or {}),
+                # EET-1302: redact PII from arguments before forwarding to backend
+                arguments, _ = redact_tool_arguments(
+                    dict(req.params.arguments or {}),
+                    tool_name=req.params.name,
+                    backend_name="default",
                 )
+
+                result = await remote_app.call_tool(req.params.name, arguments)
+
+                # EET-1302: redact PII from result before returning to Claude Code
+                result, _ = redact_tool_result(result, req.params.name, "default")
+
                 return types.ServerResult(result)
             except Exception as e:
                 return types.ServerResult(
