@@ -1,0 +1,31 @@
+docker/mcp_proxy/mcp_proxy/middleware/README.md
+  a50716b83bc19dd8 1-100
+tests/proxy/test_pii_redaction.py
+  a50716b83bc19dd8 1-277
+docker/mcp_proxy/mcp_proxy/middleware/pii_redaction.py
+  a50716b83bc19dd8 1-215
+docker/mcp_proxy/mcp_proxy/server/aggregated_proxy_server.py
+  a50716b83bc19dd8 19,1082-1084,1138-1141
+docker/mcp_proxy/mcp_proxy/server/proxy_server.py
+  a50716b83bc19dd8 12,199-203,205-210
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.3.0",
+  "base_commit_sha": "bbeff544e5075d0b9c5e90bd6bbf1396645c9bd7",
+  "prompts": {
+    "a50716b83bc19dd8": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "2cea5b3f-bb51-44b0-997f-0d7cef3d443c",
+        "model": "claude-sonnet-4-6"
+      },
+      "human_author": "Purushotham Muktha",
+      "messages": [],
+      "total_additions": 618,
+      "total_deletions": 9,
+      "accepted_lines": 612,
+      "overriden_lines": 0
+    }
+  }
+}
