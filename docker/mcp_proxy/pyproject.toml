@@ -36,7 +36,7 @@ dependencies = [
   "boto3==1.40.33",
   "types-requests==2.32.4.20250809",
   "starlette==0.48.0",
-  "uv==0.8.19",
+  "uv==0.9.5",
   "httpx==0.28.1"
 ]
 
