@@ -1,0 +1,18 @@
+pyproject.toml
+  h_244a43e0e20946 32
+docker/mcp_oauth/pyproject.toml
+  h_244a43e0e20946 15,19
+docker/mcp_proxy/pyproject.toml
+  h_244a43e0e20946 38
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "1a4e0ff00a95929feebd9345e7355c00d56e2376",
+  "prompts": {},
+  "humans": {
+    "h_244a43e0e20946": {
+      "author": "sedthakitQred <sedthakit.prasanphanich@qred.com>"
+    }
+  }
+}
