@@ -1,0 +1,14 @@
+pyproject.toml
+  h_244a43e0e20946 32
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.7.5",
+  "base_commit_sha": "79f46914f40d2da2290cee0830f7c8a93430647a",
+  "prompts": {},
+  "humans": {
+    "h_244a43e0e20946": {
+      "author": "sedthakitQred <sedthakit.prasanphanich@qred.com>"
+    }
+  }
+}
